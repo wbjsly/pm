@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://www.wh.com/pm">
+
+    <process id="PM_BUDGET_APPROVAL" name="预算审批流程" isExecutable="true">
+
+        <startEvent id="start" name="开始"/>
+
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="sponsorApproval"/>
+
+        <userTask id="sponsorApproval" name="Sponsor审批预算"
+                  flowable:assignee="${approverId}">
+            <documentation>审批人从项目章程的SPONSOR_ID自动获取</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow2" sourceRef="sponsorApproval" targetRef="approvalGateway"/>
+
+        <exclusiveGateway id="approvalGateway" name="审批结果"/>
+
+        <sequenceFlow id="flowApproved" sourceRef="approvalGateway" targetRef="approvedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'APPROVED'}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowRejected" sourceRef="approvalGateway" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'REJECTED'}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="approvedEnd" name="审批通过">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                    delegateExpression="${flowableProcessEndListener}"/>
+            </extensionElements>
+        </endEvent>
+
+        <endEvent id="rejectedEnd" name="审批驳回">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                    delegateExpression="${flowableProcessEndListener}"/>
+            </extensionElements>
+        </endEvent>
+
+    </process>
+
+</definitions>

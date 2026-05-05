@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://www.wh.com/pm">
+
+    <process id="PM_WBS_MODIFY_APPROVAL" name="WBS变更审批流程" isExecutable="true">
+
+        <startEvent id="start" name="开始"/>
+
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="baApproval"/>
+
+        <userTask id="baApproval" name="BA审批"
+                  flowable:candidateGroups="ROLE_BA">
+            <documentation>WBS变更BA审批</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow2" sourceRef="baApproval" targetRef="baGateway"/>
+
+        <exclusiveGateway id="baGateway" name="BA审批决策"/>
+
+        <!-- BA rejected -->
+        <sequenceFlow id="flow-ba-reject" sourceRef="baGateway" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'REJECTED'}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- BA approved or auto-skipped → PM approval -->
+        <sequenceFlow id="flow-ba-approve" sourceRef="baGateway" targetRef="pmApproval">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'APPROVED' || skipBaApproval == true}</conditionExpression>
+        </sequenceFlow>
+
+        <userTask id="pmApproval" name="PM审批"
+                  flowable:candidateGroups="ROLE_PM">
+            <documentation>WBS变更PM审批</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow3" sourceRef="pmApproval" targetRef="pmGateway"/>
+
+        <exclusiveGateway id="pmGateway" name="PM审批决策"/>
+
+        <sequenceFlow id="flow-pm-approved" sourceRef="pmGateway" targetRef="approvedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'APPROVED'}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flow-pm-rejected" sourceRef="pmGateway" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approvalResult == 'REJECTED'}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="approvedEnd" name="审批通过">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                    delegateExpression="${flowableProcessEndListener}"/>
+            </extensionElements>
+        </endEvent>
+
+        <endEvent id="rejectedEnd" name="审批驳回">
+            <extensionElements>
+                <flowable:executionListener event="end"
+                    delegateExpression="${flowableProcessEndListener}"/>
+            </extensionElements>
+        </endEvent>
+
+    </process>
+</definitions>

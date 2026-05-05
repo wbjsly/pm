@@ -1,0 +1,16 @@
+{
+  "name": "wh-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n \"FE,BE\" -c \"green,blue\" \"npm run dev:fe\" \"npm run dev:be\"",
+    "dev:fe": "cd wh-frontend && npm run dev",
+    "dev:be": "cd wh-backend && mvn spring-boot:run",
+    "dev:db:migrate": "echo 'Database migration handled by SqliteBootstrap'",
+    "build": "cd wh-frontend && npm run build",
+    "install:all": "npm install && cd wh-frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

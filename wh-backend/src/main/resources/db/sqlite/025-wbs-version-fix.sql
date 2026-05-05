@@ -1,0 +1,7 @@
+-- Fix: pm_wbs_version 缺失 BaseEntity 审计字段 (FR-PM-010)
+ALTER TABLE pm_wbs_version ADD COLUMN UPDATE_BY TEXT;
+ALTER TABLE pm_wbs_version ADD COLUMN UPDATE_DATE TEXT DEFAULT (datetime('now', 'localtime'));
+ALTER TABLE pm_wbs_version ADD COLUMN REMARKS TEXT;
+ALTER TABLE pm_wbs_version ADD COLUMN DEL_FLAG TEXT DEFAULT '0';
+ALTER TABLE pm_wbs_version ADD COLUMN VER_NO INTEGER DEFAULT 0 NOT NULL;
+ALTER TABLE pm_wbs_version ADD COLUMN SYS_CODE TEXT;

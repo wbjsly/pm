@@ -1,0 +1,12 @@
+-- Sequence Table for Code Generation
+CREATE TABLE IF NOT EXISTS wh_sequence (
+    SEQ_NAME TEXT NOT NULL PRIMARY KEY,
+    SEQ_VALUE INTEGER NOT NULL DEFAULT 0,
+    SEQ_PREFIX TEXT,
+    SEQ_YEAR INTEGER
+);
+
+-- Seed PM_CHARTER sequence (starts from 10 to account for 10 pre-seeded charters)
+INSERT INTO wh_sequence (SEQ_NAME, SEQ_VALUE, SEQ_PREFIX, SEQ_YEAR)
+SELECT 'PM_CHARTER', 10, 'CHARTER-', 2026
+WHERE NOT EXISTS (SELECT 1 FROM wh_sequence WHERE SEQ_NAME = 'PM_CHARTER');
