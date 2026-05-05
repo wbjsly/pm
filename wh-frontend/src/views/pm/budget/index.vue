@@ -29,13 +29,25 @@
 
       <!-- Table -->
       <el-table :data="tableData" v-loading="loading" :key="tableKey" stripe>
-        <el-table-column prop="projectName" label="项目名称" min-width="180" />
-        <el-table-column prop="pmName" label="项目经理" width="120" />
         <el-table-column prop="budgetCode" label="预算编码" width="180" />
+        <el-table-column prop="projectName" label="项目名称" min-width="180" />
+        <el-table-column prop="projectShortName" label="项目简称" width="120">
+          <template #default="{ row }">
+            <span v-if="row.projectShortName">{{ row.projectShortName }}</span>
+            <span v-else style="color: #999;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="pmName" label="项目经理" width="120" />
         <el-table-column prop="version" label="版本号" width="80" />
-        <el-table-column prop="costBaseline" label="成本基准" width="120" />
-        <el-table-column prop="managementReserve" label="管理储备" width="120" />
-        <el-table-column prop="totalBudget" label="总预算" width="120" />
+        <el-table-column prop="totalBudgetDisplay" label="总预算(元)" width="140">
+          <template #default="{ row }">{{ formatMoney(row.totalBudget) }}</template>
+        </el-table-column>
+        <el-table-column prop="projectDirectBudget" label="项目直接预算(元)" width="140">
+          <template #default="{ row }">{{ formatMoney(row.costBaseline) }}</template>
+        </el-table-column>
+        <el-table-column prop="projectManagementBudget" label="项目管理预算(元)" width="140">
+          <template #default="{ row }">{{ formatMoney(row.managementReserve) }}</template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)">{{ statusLabel(row.status) }}</el-tag>
@@ -112,6 +124,12 @@ const queryParams = ref({
 const statusType = (status) => {
   const map = { DRAFT: 'info', PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }
   return map[status] || 'info'
+}
+
+const formatMoney = (val) => {
+  const num = parseFloat(val) || 0
+  if (num === 0) return '-'
+  return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const statusLabel = (status) => {

@@ -156,7 +156,7 @@
           </div>
         </el-card>
 
-        <!-- Summary: 总预算 = 分项汇总 + 管理储备 -->
+        <!-- Summary: 总预算 = 项目直接预算 + 项目管理预算 -->
         <el-divider>预算汇总</el-divider>
         <div class="budget-summary-row">
           <div class="summary-item">
@@ -165,12 +165,12 @@
           </div>
           <div class="summary-operator">=</div>
           <div class="summary-item">
-            <label>分项汇总</label>
+            <label>项目直接预算</label>
             <div class="summary-value">¥ {{ formatMoney(costBaseline) }} 元人民币</div>
           </div>
           <div class="summary-operator">+</div>
           <div class="summary-item input-item">
-            <label>管理储备</label>
+            <label>项目管理预算</label>
             <el-input-number v-model="form.managementReserve" :min="0" :precision="2" @change="calcTotals" class="reserve-input"
               :formatter="(value) => value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
               :parser="(value) => value.replace(/,/g, '')"
@@ -366,8 +366,23 @@ const loadProjects = async () => {
     const budgets = budgetRes.data?.records || []
     // Get project IDs that already have active budgets
     const budgetedProjectIds = new Set(budgets.map(b => b.projectId))
-    // Filter out projects that already have a budget
-    projects.value = charters.filter(c => !budgetedProjectIds.has(c.id))
+    let filtered = charters.filter(c => !budgetedProjectIds.has(c.id))
+    // In edit mode, ensure current project is included even if it has a budget
+    if (isEdit.value && route.params.id) {
+      try {
+        // getBudgetDetailApi returns WhPmBudget directly (not wrapped in .budget)
+        const budgetRes2 = await getBudgetDetailApi(route.params.id)
+        const budget = budgetRes2.data
+        if (budget && budget.projectId) {
+          const exists = filtered.find(p => p.id === budget.projectId)
+          if (!exists) {
+            const charter = charters.find(c => c.id === budget.projectId)
+            if (charter) filtered.unshift(charter)
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    projects.value = filtered
   } catch (e) {
     // Ignore
   }

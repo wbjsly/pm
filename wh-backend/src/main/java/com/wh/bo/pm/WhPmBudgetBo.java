@@ -578,6 +578,7 @@ public class WhPmBudgetBo {
             var charter = charterMap.get(b.getProjectId());
             if (charter != null) {
                 b.setProjectName(charter.getProjectName());
+                b.setProjectShortName(charter.getProjectShortName());
                 if (charter.getPmId() != null) {
                     b.setPmName(pmNameMap.get(charter.getPmId()));
                 }

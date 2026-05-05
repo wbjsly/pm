@@ -58,3 +58,4 @@ wh-frontend/.env.*
 *.swp
 *.swo
 
+.gstack/

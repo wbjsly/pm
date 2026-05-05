@@ -150,12 +150,12 @@
           </div>
           <div class="summary-operator">=</div>
           <div class="summary-item">
-            <label>分项汇总</label>
+            <label>项目直接预算</label>
             <div class="summary-value">¥ {{ formatMoney(costBaseline) }} 元人民币</div>
           </div>
           <div class="summary-operator">+</div>
           <div class="summary-item">
-            <label>管理储备</label>
+            <label>项目管理预算</label>
             <div class="summary-value">¥ {{ formatMoney(data.budget?.managementReserve) }} 元人民币</div>
           </div>
         </div>

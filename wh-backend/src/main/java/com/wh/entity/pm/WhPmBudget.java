@@ -49,4 +49,7 @@ public class WhPmBudget extends BaseEntity {
 
     @TableField(exist = false)
     private String pmName;
+
+    @TableField(exist = false)
+    private String projectShortName;
 }

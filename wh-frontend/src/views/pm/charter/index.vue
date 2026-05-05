@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <span style="font-weight: bold; font-size: 16px;">项目</span>
+          <span style="font-weight: bold; font-size: 16px;">项目立项</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 120px">
               <el-option label="草稿" value="DRAFT" />
@@ -24,18 +24,21 @@
 
       <!-- Table -->
       <el-table :data="tableData" row-key="id" v-loading="loading" stripe>
-        <el-table-column prop="charterCode" label="章程编号" width="200" />
-        <el-table-column prop="projectName" label="项目名称" min-width="100" />
         <el-table-column prop="projectCode" label="项目编号" width="160" />
+        <el-table-column prop="projectName" label="项目名称" min-width="100" />
+        <el-table-column prop="projectShortName" label="项目简称" width="120">
+          <template #default="{ row }">
+            <span v-if="row.projectShortName">{{ row.projectShortName }}</span>
+            <span v-else style="color: #999;">-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="projectCategory" label="项目分类" width="110">
           <template #default="{ row }">
             <el-tag v-if="row.projectCategory" size="small" :type="categoryTagType(row.projectCategory)">{{ categoryLabel(row.projectCategory) }}</el-tag>
             <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="contractNo" label="合同编号" width="150" />
         <el-table-column prop="pmName" label="项目经理" width="100" />
-        <el-table-column prop="sponsorName" label="项目发起人" width="110" />
         <el-table-column prop="startDate" label="计划开始日期" width="120" />
         <el-table-column prop="endDate" label="计划结束日期" width="120" />
         <el-table-column prop="status" label="状态" width="130">
