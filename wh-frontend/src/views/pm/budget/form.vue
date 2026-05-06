@@ -446,6 +446,7 @@ onActivated(async () => {
 })
 
 watch(() => route.params.id, (newId) => {
+  if (!route.path.startsWith('/pm/budget/form')) return
   if (!newId) {
     resetForm()
   } else {

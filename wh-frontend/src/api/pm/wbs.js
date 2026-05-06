@@ -32,6 +32,22 @@ export function reopenWbsApi(id) {
   return request.post(`/pm/wbs/${id}/reopen`)
 }
 
+export function cancelWbsApi(id) {
+  return request.post(`/pm/wbs/${id}/cancel`)
+}
+
+export function completeWbsApi(id) {
+  return request.post(`/pm/wbs/${id}/complete`)
+}
+
+export function startWbsApi(id) {
+  return request.post(`/pm/wbs/${id}/start`)
+}
+
+export function testWbsApi(id) {
+  return request.post(`/pm/wbs/${id}/test`)
+}
+
 export function getWbsVersionsApi(id) {
   return request.get(`/pm/wbs/${id}/versions`)
 }

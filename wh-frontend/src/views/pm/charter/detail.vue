@@ -13,7 +13,10 @@
         <el-descriptions-item label="预算上限">{{ formatBudget(detail.budgetCap) }}</el-descriptions-item>
         <el-descriptions-item label="项目编号">{{ detail.projectCode }}</el-descriptions-item>
         <el-descriptions-item label="项目简称">{{ detail.projectShortName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
+        <el-descriptions-item label="项目进度">
+          <el-tag :type="progressTagType(detail.progress)">{{ progressLabel(detail.progress) }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="审批状态">
           <el-tag :type="statusTagType(detail.status)">{{ statusLabel(detail.status) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="项目分类">
@@ -80,6 +83,16 @@ const statusTagType = (status) => {
 const statusLabel = (status) => {
   const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
   return map[status] || status
+}
+
+const progressTagType = (progress) => {
+  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
+  return map[progress] || 'info'
+}
+
+const progressLabel = (progress) => {
+  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
+  return map[progress] || progress
 }
 
 const loadDetail = async () => {

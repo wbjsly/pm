@@ -3,21 +3,21 @@
     <el-card>
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: bold; font-size: 16px;">{{ isEdit ? '编辑WBS' : '新增WBS' }}</span>
+          <span style="font-weight: bold; font-size: 16px;">{{ isEdit ? '编辑任务' : '新增任务' }}</span>
           <el-button @click="handleCancel">返回</el-button>
         </div>
       </template>
 
       <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
         <el-form-item label="名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入WBS名称" />
+          <el-input v-model="form.name" placeholder="请输入任务名称" />
         </el-form-item>
 
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
         </el-form-item>
 
-        <el-form-item v-if="isEdit" label="WBS编码">
+        <el-form-item v-if="isEdit" label="任务编码">
           <el-input :value="detail?.wbsCode" disabled placeholder="系统自动生成" />
         </el-form-item>
 
@@ -134,7 +134,7 @@ const form = reactive({
 })
 
 const rules = {
-  name: [{ required: true, message: '请输入WBS名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
   productId: [{ required: true, message: '请选择产品', trigger: 'change' }],
   effortEstimate: [{ required: true, message: '请输入估算工时', trigger: 'blur' }],
   budgetEstimate: [{ required: true, message: '请输入估算成本', trigger: 'blur' }]
@@ -236,5 +236,8 @@ onMounted(() => {
   loadProducts()
   initForm()
 })
-onActivated(initForm)
+onActivated(() => {
+  if (!route.path.startsWith('/pm/wbs/form')) return
+  initForm()
+})
 </script>

@@ -24,4 +24,5 @@ public class CharterUpdateRequest {
     private String outputValueExcludingTax;
     private String taxRate;
     private String taxAmount;
+    private String progress;
 }

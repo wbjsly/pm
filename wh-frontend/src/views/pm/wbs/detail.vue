@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: bold; font-size: 16px;">WBS详情</span>
+          <span style="font-weight: bold; font-size: 16px;">任务详情</span>
           <el-button @click="$router.back()">返回</el-button>
         </div>
       </template>
@@ -43,16 +43,19 @@
 
       <!-- Action buttons -->
       <div style="margin-top: 24px; display: flex; gap: 8px;">
-        <el-button v-if="detail?.status === 'PLANNED'" type="primary" @click="$router.push(`/pm/wbs/form/${detail.id}`)">
-          <el-icon><Edit /></el-icon> 编辑
+        <el-button v-if="detail?.status === 'IN_DEVELOPMENT'" type="primary" @click="handleTest">
+          <el-icon><Promotion /></el-icon> 提测
         </el-button>
-        <el-button v-if="detail?.status === 'IN_PROGRESS'" type="warning" @click="handleSuspend">
+        <el-button v-if="detail?.status === 'IN_DEVELOPMENT'" type="warning" @click="handleSuspend">
           <el-icon><VideoPause /></el-icon> 暂停
         </el-button>
         <el-button v-if="detail?.status === 'SUSPENDED'" type="success" @click="handleResume">
           <el-icon><VideoPlay /></el-icon> 恢复
         </el-button>
-        <el-button v-if="detail?.status === 'COMPLETED'" type="info" @click="handleReopen">
+        <el-button v-if="detail?.status === 'TESTING'" type="success" @click="handleComplete">
+          <el-icon><CircleCheck /></el-icon> 完成
+        </el-button>
+        <el-button v-if="detail?.status === 'COMPLETED' || detail?.status === 'CANCELLED'" type="info" @click="handleReopen">
           <el-icon><RefreshRight /></el-icon> 重新打开
         </el-button>
       </div>
@@ -61,11 +64,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getWbsDetailApi, suspendWbsApi, resumeWbsApi, reopenWbsApi } from '@/api/pm/wbs'
+import { getWbsDetailApi, suspendWbsApi, resumeWbsApi, reopenWbsApi, testWbsApi, completeWbsApi } from '@/api/pm/wbs'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Edit, VideoPause, VideoPlay, RefreshRight } from '@element-plus/icons-vue'
+import { VideoPause, VideoPlay, RefreshRight, Promotion, CircleCheck } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,7 +80,7 @@ const loadDetail = async () => {
 }
 
 const handleSuspend = async () => {
-  await ElMessageBox.confirm('确认暂停该WBS？', '提示', { type: 'warning' })
+  await ElMessageBox.confirm('确认暂停该任务？', '提示', { type: 'warning' })
   await suspendWbsApi(route.params.id)
   ElMessage.success('已暂停')
   loadDetail()
@@ -90,18 +93,32 @@ const handleResume = async () => {
 }
 
 const handleReopen = async () => {
-  await ElMessageBox.confirm('确认重新打开该WBS？', '提示', { type: 'warning' })
+  await ElMessageBox.confirm('确认重新打开该任务？', '提示', { type: 'warning' })
   await reopenWbsApi(route.params.id)
   ElMessage.success('已重新打开')
   loadDetail()
 }
 
+const handleTest = async () => {
+  await ElMessageBox.confirm('确认提交测试？', '提示', { type: 'warning' })
+  await testWbsApi(route.params.id)
+  ElMessage.success('已提测')
+  loadDetail()
+}
+
+const handleComplete = async () => {
+  await ElMessageBox.confirm('确认标记该任务为已完成？', '提示', { type: 'warning' })
+  await completeWbsApi(route.params.id)
+  ElMessage.success('已完成')
+  loadDetail()
+}
+
 const wbsStatusTagType = (status) => {
-  const map = { PLANNED: 'info', IN_PROGRESS: 'warning', COMPLETED: 'success', SUSPENDED: 'danger' }
+  const map = { NOT_STARTED: 'info', IN_DEVELOPMENT: 'warning', TESTING: 'primary', COMPLETED: 'success', SUSPENDED: 'danger', CANCELLED: 'info' }
   return map[status] || 'info'
 }
 const wbsStatusLabel = (status) => {
-  const map = { PLANNED: '计划中', IN_PROGRESS: '进行中', COMPLETED: '已完成', SUSPENDED: '已暂停' }
+  const map = { NOT_STARTED: '未开始', IN_DEVELOPMENT: '开发中', TESTING: '已提测', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
   return map[status] || status
 }
 const priorityTagType = (p) => {
@@ -121,4 +138,9 @@ const difficultyLabel = (d) => {
 }
 
 onMounted(loadDetail)
+
+watch(() => route.params.id, (newId) => {
+  if (!route.path.startsWith('/pm/wbs/detail')) return
+  if (newId) loadDetail()
+})
 </script>

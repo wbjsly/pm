@@ -48,7 +48,7 @@ public class WhPmCharterBo {
         this.taskService = taskService;
     }
 
-    public IPage<WhPmCharter> pageList(int pageNum, int pageSize, String status, String pmId, String keyword) {
+    public IPage<WhPmCharter> pageList(int pageNum, int pageSize, String status, String pmId, String keyword, String progress) {
         Page<WhPmCharter> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<WhPmCharter> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WhPmCharter::getDelFlag, "0");
@@ -62,6 +62,10 @@ public class WhPmCharterBo {
             wrapper.like(WhPmCharter::getProjectName, keyword)
                    .or()
                    .like(WhPmCharter::getCharterCode, keyword);
+        }
+        if (progress != null && !progress.isEmpty()) {
+            List<String> progressList = java.util.Arrays.asList(progress.split(","));
+            wrapper.in(WhPmCharter::getProgress, progressList);
         }
         wrapper.orderByDesc(WhPmCharter::getCreateDate);
         IPage<WhPmCharter> result = charterDao.selectPage(page, wrapper);
@@ -178,6 +182,7 @@ public class WhPmCharterBo {
         charter.setOutputValueExcludingTax(req.getOutputValueExcludingTax());
         charter.setTaxRate(req.getTaxRate());
         charter.setTaxAmount(req.getTaxAmount());
+        charter.setProgress(req.getProgress() != null ? req.getProgress() : "IN_PROGRESS");
         charter.setStatus("DRAFT");
         charter.setDelFlag("0");
         charter.setVerNo(0);
@@ -210,6 +215,7 @@ public class WhPmCharterBo {
         charter.setOutputValueExcludingTax(req.getOutputValueExcludingTax());
         charter.setTaxRate(req.getTaxRate());
         charter.setTaxAmount(req.getTaxAmount());
+        charter.setProgress(req.getProgress());
         charterDao.updateById(charter);
     }
 

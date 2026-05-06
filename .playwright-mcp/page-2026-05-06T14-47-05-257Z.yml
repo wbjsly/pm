@@ -1,0 +1,19 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e39]:
+    - heading "WH管理系统" [level=2] [ref=e41]
+    - generic [ref=e43]:
+      - generic [ref=e47]:
+        - img [ref=e50]
+        - textbox "用户名" [ref=e52]: admin
+      - generic [ref=e56]:
+        - img [ref=e59]
+        - textbox "密码" [ref=e62]: admin123
+        - img [ref=e69] [cursor=pointer]
+      - button "登录" [ref=e65] [cursor=pointer]:
+        - generic [ref=e66]: 登录
+  - alert [ref=e72]:
+    - img [ref=e74]
+    - paragraph [ref=e76]: 用户名或密码错误
+  - alert [ref=e77]:
+    - img [ref=e79]
+    - paragraph [ref=e81]: 登录失败，请检查用户名和密码

@@ -70,6 +70,30 @@ public class WhPmWbsElementController {
         return R.ok();
     }
 
+    @PostMapping("/{id}/start")
+    public R<Void> start(@PathVariable String id) {
+        wbsBo.start(id);
+        return R.ok();
+    }
+
+    @PostMapping("/{id}/test")
+    public R<Void> test(@PathVariable String id) {
+        wbsBo.test(id);
+        return R.ok();
+    }
+
+    @PostMapping("/{id}/complete")
+    public R<Void> complete(@PathVariable String id) {
+        wbsBo.complete(id);
+        return R.ok();
+    }
+
+    @PostMapping("/{id}/cancel")
+    public R<Void> cancel(@PathVariable String id) {
+        wbsBo.cancel(id);
+        return R.ok();
+    }
+
     @GetMapping("/{id}/versions")
     public R<List<WhPmWbsVersion>> versions(@PathVariable String id) {
         return R.ok(wbsBo.getVersionHistory(id));

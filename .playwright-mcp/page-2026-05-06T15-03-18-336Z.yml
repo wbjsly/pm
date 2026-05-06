@@ -1,0 +1,114 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: WH管理系统
+        - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]:
+        - img [ref=e15]
+        - textbox "搜索菜单" [ref=e17]
+      - menubar [ref=e18]:
+        - menuitem "主页" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e23]: 主页
+        - menuitem "项目管理" [expanded] [ref=e38]:
+          - generic [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - generic [ref=e43]: 项目管理
+            - img [ref=e45]
+          - menu [ref=e47]:
+            - menuitem "项目立项" [ref=e48] [cursor=pointer]
+            - menuitem "项目任务" [ref=e49] [cursor=pointer]
+            - menuitem "预算管理" [ref=e50] [cursor=pointer]
+            - menuitem "工时管理" [ref=e51] [cursor=pointer]
+        - menuitem "产品管理" [ref=e52]:
+          - generic [ref=e53] [cursor=pointer]:
+            - img [ref=e55]
+            - generic [ref=e57]: 产品管理
+            - img [ref=e59]
+        - menuitem "系统管理" [ref=e61]:
+          - generic [ref=e62] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e66]: 系统管理
+            - img [ref=e68]
+  - generic [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - tablist [ref=e72]:
+          - tab "项目任务" [selected] [ref=e73]:
+            - text: 项目任务
+            - img [ref=e75]
+        - generic:
+          - tabpanel "项目任务"
+      - button "系统管理员" [ref=e77] [cursor=pointer]:
+        - img [ref=e32]
+        - generic [ref=e78]: 系统管理员
+        - img [ref=e35]
+    - main [ref=e37]:
+      - generic [ref=e131]:
+        - generic [ref=e133]:
+          - generic [ref=e134]: 任务管理
+          - generic [ref=e135]:
+            - generic [ref=e137] [cursor=pointer]:
+              - generic [ref=e138]:
+                - generic [ref=e140]:
+                  - generic [ref=e142]: 进行中
+                  - button "关闭此标签" [ref=e143]:
+                    - img [ref=e145]
+                - generic [ref=e150]: + 1
+                - combobox [ref=e152]
+              - img [ref=e155]
+            - textbox "搜索任务编码/名称" [ref=e159]
+            - button "查询" [ref=e160] [cursor=pointer]:
+              - generic [ref=e161]: 查询
+            - button "重置" [ref=e162] [cursor=pointer]:
+              - generic [ref=e163]: 重置
+        - generic [ref=e164]:
+          - generic [ref=e166] [cursor=pointer]:
+            - img [ref=e168]
+            - generic [ref=e170]: 安全合规审计平台2026
+            - generic [ref=e172]: CHARTER-2026-010
+            - generic [ref=e174]: 进行中
+            - generic [ref=e175]: "PM: 张伟"
+            - generic [ref=e176]: "工时: 132h"
+          - generic [ref=e178] [cursor=pointer]:
+            - img [ref=e180]
+            - generic [ref=e182]: 财务共享服务中心
+            - generic [ref=e184]: CHARTER-2026-009
+            - generic [ref=e186]: 进行中
+            - generic [ref=e187]: "PM: 张伟"
+          - generic [ref=e189] [cursor=pointer]:
+            - img [ref=e191]
+            - generic [ref=e193]: 人力资源管理系统
+            - generic [ref=e195]: CHARTER-2026-008
+            - generic [ref=e197]: 进行中
+            - generic [ref=e198]: "PM: Admin"
+          - generic [ref=e200] [cursor=pointer]:
+            - img [ref=e202]
+            - generic [ref=e204]: 绿色IT节能减排
+            - generic [ref=e206]: CHARTER-2026-007
+            - generic [ref=e208]: 进行中
+            - generic [ref=e209]: "PM: 张伟"
+          - generic [ref=e211] [cursor=pointer]:
+            - img [ref=e213]
+            - generic [ref=e215]: 移动办公App升级
+            - generic [ref=e217]: CHARTER-2026-006
+            - generic [ref=e219]: 进行中
+            - generic [ref=e220]: "PM: 张伟"
+          - generic [ref=e221]:
+            - generic [ref=e222]: 共 12 条
+            - generic [ref=e225] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e227]
+                - generic [ref=e228]: 5条/页
+              - img [ref=e231]
+            - button "上一页" [disabled] [ref=e233]:
+              - generic:
+                - img
+            - list [ref=e234]:
+              - listitem "第 1 页" [ref=e235]: "1"
+              - listitem "第 2 页" [ref=e236] [cursor=pointer]: "2"
+              - listitem "第 3 页" [ref=e237] [cursor=pointer]: "3"
+            - button "下一页" [ref=e238] [cursor=pointer]:
+              - generic:
+                - img

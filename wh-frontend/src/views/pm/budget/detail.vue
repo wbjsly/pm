@@ -278,6 +278,7 @@ onMounted(async () => {
 onActivated(loadData)
 
 watch(() => route.params.id, () => {
+  if (!route.path.startsWith('/pm/budget/detail')) return
   loadData()
 })
 </script>

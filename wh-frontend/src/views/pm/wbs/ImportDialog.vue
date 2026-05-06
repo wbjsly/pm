@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="批量导入WBS" width="600px">
+  <el-dialog v-model="visible" title="批量导入任务" width="600px">
     <el-upload
       drag
       :auto-upload="false"

@@ -143,7 +143,7 @@ public class WhPmWbsElementBo {
         element.setLatestPlannedEndDate(req.getPlannedEndDate());
         element.setRemarks(req.getRemarks());
         element.setSortOrder(req.getSortOrder() != null ? req.getSortOrder() : 0);
-        element.setStatus("PLANNED");
+        element.setStatus("NOT_STARTED");
         element.setDelFlag("0");
         element.setVerNo(0);
 
@@ -176,8 +176,8 @@ public class WhPmWbsElementBo {
     public void update(String id, WbsUpdateRequest req) {
         WhPmWbsElement element = getDetail(id);
 
-        if ("PLANNED".equals(element.getStatus())) {
-            // PLANNED: edit freely
+        if ("NOT_STARTED".equals(element.getStatus()) || "IN_DEVELOPMENT".equals(element.getStatus())) {
+            // NOT_STARTED/IN_DEVELOPMENT: edit freely
             applyUpdate(element, req);
             wbsDao.updateById(element);
 
@@ -190,20 +190,11 @@ public class WhPmWbsElementBo {
             if (element.getParentId() != null && !element.getParentId().isEmpty()) {
                 recalculateEffort(element.getParentId());
             }
-        } else if ("IN_PROGRESS".equals(element.getStatus())) {
-            // IN_PROGRESS: trigger approval workflow (stored as pending)
-            // For now, apply directly and trigger approval
-            applyUpdate(element, req);
-            wbsDao.updateById(element);
-
-            if (datesChanged(element, req)) {
-                createNewVersion(element, req);
-            }
         } else if ("SUSPENDED".equals(element.getStatus())) {
             applyUpdate(element, req);
             wbsDao.updateById(element);
         } else {
-            throw new ServiceException("COMPLETED状态的WBS不可修改");
+            throw new ServiceException("已完成/已取消/已提测状态的WBS不可修改");
         }
     }
 
@@ -258,8 +249,8 @@ public class WhPmWbsElementBo {
     @Transactional
     public void delete(String id) {
         WhPmWbsElement element = getDetail(id);
-        if (!"PLANNED".equals(element.getStatus()) && !"SUSPENDED".equals(element.getStatus())) {
-            throw new ServiceException("只有PLANNED或SUSPENDED状态的WBS可以删除");
+        if (!"NOT_STARTED".equals(element.getStatus()) && !"SUSPENDED".equals(element.getStatus())) {
+            throw new ServiceException("只有未开始或已暂停状态的WBS可以删除");
         }
         if (wbsDao.countChildren(id) > 0) {
             throw new ServiceException("存在子节点，禁止删除");
@@ -312,11 +303,8 @@ public class WhPmWbsElementBo {
     @Transactional
     public void suspend(String id) {
         WhPmWbsElement element = getDetail(id);
-        if ("PLANNED".equals(element.getStatus())) {
-            throw new ServiceException("PLANNED状态的WBS不可暂停");
-        }
-        if (!"IN_PROGRESS".equals(element.getStatus())) {
-            throw new ServiceException("只有IN_PROGRESS状态的WBS可以暂停");
+        if (!"IN_DEVELOPMENT".equals(element.getStatus())) {
+            throw new ServiceException("只有开发中状态的WBS可以暂停");
         }
         element.setStatus("SUSPENDED");
         wbsDao.updateById(element);
@@ -326,21 +314,61 @@ public class WhPmWbsElementBo {
     public void resume(String id) {
         WhPmWbsElement element = getDetail(id);
         if (!"SUSPENDED".equals(element.getStatus())) {
-            throw new ServiceException("只有SUSPENDED状态的WBS可以恢复");
+            throw new ServiceException("只有已暂停状态的WBS可以恢复");
         }
-        element.setStatus("IN_PROGRESS");
+        element.setStatus("IN_DEVELOPMENT");
         wbsDao.updateById(element);
     }
 
     @Transactional
     public void reopen(String id) {
         WhPmWbsElement element = getDetail(id);
-        if (!"COMPLETED".equals(element.getStatus())) {
-            throw new ServiceException("只有COMPLETED状态的WBS可以重新打开");
+        if (!"COMPLETED".equals(element.getStatus()) && !"CANCELLED".equals(element.getStatus())) {
+            throw new ServiceException("只有已完成或已取消状态的WBS可以重新打开");
         }
-        // Trigger Flowable approval for reopen
-        // For now, just change status — full approval workflow in Task 39+
-        element.setStatus("IN_PROGRESS");
+        element.setStatus("NOT_STARTED");
+        wbsDao.updateById(element);
+    }
+
+    @Transactional
+    public void start(String id) {
+        WhPmWbsElement element = getDetail(id);
+        if (!"NOT_STARTED".equals(element.getStatus())) {
+            throw new ServiceException("只有未开始状态的WBS可以开始");
+        }
+        element.setStatus("IN_DEVELOPMENT");
+        element.setActualStartDate(new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()));
+        wbsDao.updateById(element);
+    }
+
+    @Transactional
+    public void test(String id) {
+        WhPmWbsElement element = getDetail(id);
+        if (!"IN_DEVELOPMENT".equals(element.getStatus())) {
+            throw new ServiceException("只有开发中状态的WBS可以提测");
+        }
+        element.setStatus("TESTING");
+        wbsDao.updateById(element);
+    }
+
+    @Transactional
+    public void complete(String id) {
+        WhPmWbsElement element = getDetail(id);
+        if (!"TESTING".equals(element.getStatus())) {
+            throw new ServiceException("只有已提测状态的WBS可以完成");
+        }
+        element.setStatus("COMPLETED");
+        element.setActualEndDate(new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()));
+        wbsDao.updateById(element);
+    }
+
+    @Transactional
+    public void cancel(String id) {
+        WhPmWbsElement element = getDetail(id);
+        if (!"NOT_STARTED".equals(element.getStatus()) && !"IN_DEVELOPMENT".equals(element.getStatus()) && !"SUSPENDED".equals(element.getStatus())) {
+            throw new ServiceException("只有未开始、开发中或已暂停状态的WBS可以取消");
+        }
+        element.setStatus("CANCELLED");
         wbsDao.updateById(element);
     }
 
@@ -455,7 +483,7 @@ public class WhPmWbsElementBo {
                     element.setPlannedOwnerId(plannedOwnerId);
                     element.setProductId(productId);
                     element.setModuleId(moduleId);
-                    element.setStatus("PLANNED");
+                    element.setStatus("NOT_STARTED");
                     element.setDelFlag("0");
                     element.setVerNo(0);
                     element.setLevel(1);
@@ -541,7 +569,7 @@ public class WhPmWbsElementBo {
                 element.setPlannedOwnerId(plannedOwnerId);
                 element.setProductId(productId);
                 element.setModuleId(moduleId);
-                element.setStatus("PLANNED");
+                element.setStatus("NOT_STARTED");
                 element.setDelFlag("0");
                 element.setVerNo(0);
 

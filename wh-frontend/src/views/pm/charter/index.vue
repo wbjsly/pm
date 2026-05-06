@@ -39,9 +39,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="pmName" label="项目经理" width="100" />
+        <el-table-column prop="progress" label="项目进度" width="100">
+          <template #default="{ row }">
+            <el-tag :type="progressTagType(row.progress)">{{ progressLabel(row.progress) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="startDate" label="计划开始日期" width="120" />
         <el-table-column prop="endDate" label="计划结束日期" width="120" />
-        <el-table-column prop="status" label="状态" width="130">
+        <el-table-column prop="status" label="审批状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
           </template>
@@ -118,6 +123,16 @@ const statusTagType = (status) => {
 const statusLabel = (status) => {
   const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
   return map[status] || status
+}
+
+const progressTagType = (progress) => {
+  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
+  return map[progress] || 'info'
+}
+
+const progressLabel = (progress) => {
+  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
+  return map[progress] || progress
 }
 
 const categoryTagType = (cat) => {

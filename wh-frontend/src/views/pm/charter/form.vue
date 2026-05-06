@@ -63,6 +63,24 @@
           </el-row>
           <el-row :gutter="16">
             <el-col :span="12">
+              <el-form-item label="项目进度" prop="progress">
+                <el-select v-model="form.progress" placeholder="选择项目进度" style="width: 100%">
+                  <el-option label="进行中" value="IN_PROGRESS" />
+                  <el-option label="已验收" value="ACCEPTED" />
+                  <el-option label="已完成" value="COMPLETED" />
+                  <el-option label="已暂停" value="SUSPENDED" />
+                  <el-option label="已取消" value="CANCELLED" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="审批状态">
+                <el-tag :type="statusTagType(form.status)">{{ statusLabel(form.status) }}</el-tag>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="16">
+            <el-col :span="12">
               <el-form-item label="计划开始日期" prop="startDate">
                 <el-date-picker v-model="form.startDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
               </el-form-item>
@@ -160,6 +178,7 @@
             <el-descriptions-item label="项目发起人">{{ getUserName(form.sponsorId) }}</el-descriptions-item>
             <el-descriptions-item label="项目经理">{{ getUserName(form.pmId) }}</el-descriptions-item>
             <el-descriptions-item label="预算上限">{{ formatBudget(form.budgetCap) }}</el-descriptions-item>
+            <el-descriptions-item label="项目进度">{{ progressLabel(form.progress) }}</el-descriptions-item>
             <el-descriptions-item label="日期范围">{{ form.startDate }} ~ {{ form.endDate }}</el-descriptions-item>
           </el-descriptions>
         </div>
@@ -206,7 +225,9 @@ const form = reactive({
   outputValueTaxable: '',
   outputValueExcludingTax: '',
   taxRate: '',
-  taxAmount: ''
+  taxAmount: '',
+  progress: 'IN_PROGRESS',
+  status: ''
 })
 
 const objectivesList = ref([{ objective: '', metric: '', target: '' }])
@@ -266,6 +287,21 @@ const getUserName = (userId) => {
   if (!userId) return '-'
   const user = userList.value.find(u => u.id === userId)
   return user ? `${user.realName} (${user.username})` : userId
+}
+
+const statusTagType = (status) => {
+  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', REJECTED: 'danger', CLOSED: '' }
+  return map[status] || 'info'
+}
+
+const statusLabel = (status) => {
+  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
+  return map[status] || status
+}
+
+const progressLabel = (progress) => {
+  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
+  return map[progress] || progress
 }
 
 const nextStep = async () => {
@@ -337,7 +373,9 @@ const resetForm = () => {
     outputValueTaxable: '',
     outputValueExcludingTax: '',
     taxRate: '',
-    taxAmount: ''
+    taxAmount: '',
+    progress: 'IN_PROGRESS',
+    status: ''
   })
   objectivesList.value = [{ objective: '', metric: '', target: '' }]
   stakeholdersList.value = [{ role: '', name: '', org: '' }]

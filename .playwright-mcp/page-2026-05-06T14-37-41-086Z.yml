@@ -1,0 +1,347 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: WH管理系统
+        - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]:
+        - img [ref=e15]
+        - textbox "搜索菜单" [ref=e17]
+      - menubar [ref=e18]:
+        - menuitem "主页" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e23]: 主页
+        - menuitem "项目管理" [expanded] [ref=e24]:
+          - generic [ref=e25] [cursor=pointer]:
+            - img [ref=e27]
+            - generic [ref=e29]: 项目管理
+            - img [ref=e31]
+          - menu [ref=e33]:
+            - menuitem "项目立项" [ref=e34] [cursor=pointer]
+            - menuitem "项目任务" [ref=e35] [cursor=pointer]
+            - menuitem "预算管理" [ref=e36] [cursor=pointer]
+            - menuitem "工时管理" [ref=e37] [cursor=pointer]
+        - menuitem "产品管理" [ref=e38]:
+          - generic [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - generic [ref=e43]: 产品管理
+            - img [ref=e45]
+        - menuitem "系统管理" [ref=e47]:
+          - generic [ref=e48] [cursor=pointer]:
+            - img [ref=e50]
+            - generic [ref=e52]: 系统管理
+            - img [ref=e54]
+  - generic [ref=e56]:
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - tablist [ref=e62]:
+          - tab "项目立项" [selected] [ref=e63]:
+            - text: 项目立项
+            - img [ref=e65]
+        - generic:
+          - tabpanel "项目立项"
+      - button "系统管理员" [ref=e68] [cursor=pointer]:
+        - img [ref=e70]
+        - generic [ref=e72]: 系统管理员
+        - img [ref=e74]
+    - main [ref=e76]:
+      - generic [ref=e78]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: 项目立项
+          - generic [ref=e82]:
+            - generic [ref=e84] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e86]
+                - generic [ref=e87]: 全部
+              - img [ref=e90]
+            - textbox "项目名称/编号" [ref=e94]
+            - button "查询" [ref=e95] [cursor=pointer]:
+              - generic [ref=e96]: 查询
+            - button "重置" [ref=e97] [cursor=pointer]:
+              - generic [ref=e98]: 重置
+            - button "新增项目" [ref=e99] [cursor=pointer]:
+              - generic [ref=e100]:
+                - img [ref=e102]
+                - text: 新增项目
+        - generic [ref=e104]:
+          - generic [ref=e106]:
+            - table [ref=e108]:
+              - rowgroup [ref=e120]:
+                - row "项目编号 项目名称 项目简称 项目分类 项目经理 项目进度 计划开始日期 计划结束日期 审批状态 操作" [ref=e121]:
+                  - columnheader "项目编号" [ref=e122]:
+                    - generic [ref=e123]: 项目编号
+                  - columnheader "项目名称" [ref=e124]:
+                    - generic [ref=e125]: 项目名称
+                  - columnheader "项目简称" [ref=e126]:
+                    - generic [ref=e127]: 项目简称
+                  - columnheader "项目分类" [ref=e128]:
+                    - generic [ref=e129]: 项目分类
+                  - columnheader "项目经理" [ref=e130]:
+                    - generic [ref=e131]: 项目经理
+                  - columnheader "项目进度" [ref=e132]:
+                    - generic [ref=e133]: 项目进度
+                  - columnheader "计划开始日期" [ref=e134]:
+                    - generic [ref=e135]: 计划开始日期
+                  - columnheader "计划结束日期" [ref=e136]:
+                    - generic [ref=e137]: 计划结束日期
+                  - columnheader "审批状态" [ref=e138]:
+                    - generic [ref=e139]: 审批状态
+                  - columnheader "操作" [ref=e140]:
+                    - generic [ref=e141]: 操作
+            - table [ref=e146]:
+              - rowgroup [ref=e158]:
+                - row "PRJ-2026-010 安全合规审计平台2026 合规2026 合同项目 张伟 进行中 2026-10-01 2027-03-31 审批中" [ref=e159]:
+                  - cell "PRJ-2026-010" [ref=e160]:
+                    - generic [ref=e161]: PRJ-2026-010
+                  - cell "安全合规审计平台2026" [ref=e162]:
+                    - generic [ref=e163]: 安全合规审计平台2026
+                  - cell "合规2026" [ref=e164]:
+                    - generic [ref=e165]: 合规2026
+                  - cell "合同项目" [ref=e166]:
+                    - generic [ref=e169]: 合同项目
+                  - cell "张伟" [ref=e170]:
+                    - generic [ref=e171]: 张伟
+                  - cell "进行中" [ref=e172]:
+                    - generic [ref=e175]: 进行中
+                  - cell "2026-10-01" [ref=e176]:
+                    - generic [ref=e177]: 2026-10-01
+                  - cell "2027-03-31" [ref=e178]:
+                    - generic [ref=e179]: 2027-03-31
+                  - cell "审批中" [ref=e180]:
+                    - generic [ref=e183]: 审批中
+                  - cell [ref=e184]:
+                    - button [ref=e186] [cursor=pointer]:
+                      - img [ref=e189]
+                - row "PRJ-2026-009 财务共享服务中心 - - 张伟 进行中 2026-09-01 2027-08-31 审批中" [ref=e191]:
+                  - cell "PRJ-2026-009" [ref=e192]:
+                    - generic [ref=e193]: PRJ-2026-009
+                  - cell "财务共享服务中心" [ref=e194]:
+                    - generic [ref=e195]: 财务共享服务中心
+                  - cell "-" [ref=e196]:
+                    - generic [ref=e197]: "-"
+                  - cell "-" [ref=e198]:
+                    - generic [ref=e199]: "-"
+                  - cell "张伟" [ref=e200]:
+                    - generic [ref=e201]: 张伟
+                  - cell "进行中" [ref=e202]:
+                    - generic [ref=e205]: 进行中
+                  - cell "2026-09-01" [ref=e206]:
+                    - generic [ref=e207]: 2026-09-01
+                  - cell "2027-08-31" [ref=e208]:
+                    - generic [ref=e209]: 2027-08-31
+                  - cell "审批中" [ref=e210]:
+                    - generic [ref=e213]: 审批中
+                  - cell [ref=e214]:
+                    - button [ref=e216] [cursor=pointer]:
+                      - img [ref=e219]
+                - row "PRJ-2026-008 人力资源管理系统 HR 合同项目 Admin 进行中 2026-08-01 2027-01-31 草稿" [ref=e221]:
+                  - cell "PRJ-2026-008" [ref=e222]:
+                    - generic [ref=e223]: PRJ-2026-008
+                  - cell "人力资源管理系统" [ref=e224]:
+                    - generic [ref=e225]: 人力资源管理系统
+                  - cell "HR" [ref=e226]:
+                    - generic [ref=e227]: HR
+                  - cell "合同项目" [ref=e228]:
+                    - generic [ref=e231]: 合同项目
+                  - cell "Admin" [ref=e232]:
+                    - generic [ref=e233]: Admin
+                  - cell "进行中" [ref=e234]:
+                    - generic [ref=e237]: 进行中
+                  - cell "2026-08-01" [ref=e238]:
+                    - generic [ref=e239]: 2026-08-01
+                  - cell "2027-01-31" [ref=e240]:
+                    - generic [ref=e241]: 2027-01-31
+                  - cell "草稿" [ref=e242]:
+                    - generic [ref=e245]: 草稿
+                  - cell [ref=e246]:
+                    - generic [ref=e247]:
+                      - button [ref=e248] [cursor=pointer]:
+                        - img [ref=e251]
+                      - button [ref=e253] [cursor=pointer]:
+                        - img [ref=e256]
+                      - button [ref=e259] [cursor=pointer]:
+                        - img [ref=e262]
+                      - button [ref=e264] [cursor=pointer]:
+                        - img [ref=e267]
+                - row "PRJ-2026-007 绿色IT节能减排 - - 张伟 进行中 2026-07-01 2027-06-30 审批中" [ref=e269]:
+                  - cell "PRJ-2026-007" [ref=e270]:
+                    - generic [ref=e271]: PRJ-2026-007
+                  - cell "绿色IT节能减排" [ref=e272]:
+                    - generic [ref=e273]: 绿色IT节能减排
+                  - cell "-" [ref=e274]:
+                    - generic [ref=e275]: "-"
+                  - cell "-" [ref=e276]:
+                    - generic [ref=e277]: "-"
+                  - cell "张伟" [ref=e278]:
+                    - generic [ref=e279]: 张伟
+                  - cell "进行中" [ref=e280]:
+                    - generic [ref=e283]: 进行中
+                  - cell "2026-07-01" [ref=e284]:
+                    - generic [ref=e285]: 2026-07-01
+                  - cell "2027-06-30" [ref=e286]:
+                    - generic [ref=e287]: 2027-06-30
+                  - cell "审批中" [ref=e288]:
+                    - generic [ref=e291]: 审批中
+                  - cell [ref=e292]:
+                    - button [ref=e294] [cursor=pointer]:
+                      - img [ref=e297]
+                - row "PRJ-2026-006 移动办公App升级 - - 张伟 进行中 2026-06-01 2026-09-30 已关闭" [ref=e299]:
+                  - cell "PRJ-2026-006" [ref=e300]:
+                    - generic [ref=e301]: PRJ-2026-006
+                  - cell "移动办公App升级" [ref=e302]:
+                    - generic [ref=e303]: 移动办公App升级
+                  - cell "-" [ref=e304]:
+                    - generic [ref=e305]: "-"
+                  - cell "-" [ref=e306]:
+                    - generic [ref=e307]: "-"
+                  - cell "张伟" [ref=e308]:
+                    - generic [ref=e309]: 张伟
+                  - cell "进行中" [ref=e310]:
+                    - generic [ref=e313]: 进行中
+                  - cell "2026-06-01" [ref=e314]:
+                    - generic [ref=e315]: 2026-06-01
+                  - cell "2026-09-30" [ref=e316]:
+                    - generic [ref=e317]: 2026-09-30
+                  - cell "已关闭" [ref=e318]:
+                    - generic [ref=e321]: 已关闭
+                  - cell [ref=e322]:
+                    - button [ref=e324] [cursor=pointer]:
+                      - img [ref=e327]
+                - row "123123 123123 123123 研发项目 王芳 进行中 2026-05-14 2026-05-29 草稿" [ref=e329]:
+                  - cell "123123" [ref=e330]:
+                    - generic [ref=e331]: "123123"
+                  - cell "123123" [ref=e332]:
+                    - generic [ref=e333]: "123123"
+                  - cell "123123" [ref=e334]:
+                    - generic [ref=e335]: "123123"
+                  - cell "研发项目" [ref=e336]:
+                    - generic [ref=e339]: 研发项目
+                  - cell "王芳" [ref=e340]:
+                    - generic [ref=e341]: 王芳
+                  - cell "进行中" [ref=e342]:
+                    - generic [ref=e345]: 进行中
+                  - cell "2026-05-14" [ref=e346]:
+                    - generic [ref=e347]: 2026-05-14
+                  - cell "2026-05-29" [ref=e348]:
+                    - generic [ref=e349]: 2026-05-29
+                  - cell "草稿" [ref=e350]:
+                    - generic [ref=e353]: 草稿
+                  - cell [ref=e354]:
+                    - generic [ref=e355]:
+                      - button [ref=e356] [cursor=pointer]:
+                        - img [ref=e359]
+                      - button [ref=e361] [cursor=pointer]:
+                        - img [ref=e364]
+                      - button [ref=e367] [cursor=pointer]:
+                        - img [ref=e370]
+                      - button [ref=e372] [cursor=pointer]:
+                        - img [ref=e375]
+                - row "Token Plan 团队版 Token Plan 团队版 - - 吴刚 进行中 2026-05-20 2026-04-28 审批中" [ref=e377]:
+                  - cell "Token Plan 团队版" [ref=e378]:
+                    - generic [ref=e379]: Token Plan 团队版
+                  - cell "Token Plan 团队版" [ref=e380]:
+                    - generic [ref=e381]: Token Plan 团队版
+                  - cell "-" [ref=e382]:
+                    - generic [ref=e383]: "-"
+                  - cell "-" [ref=e384]:
+                    - generic [ref=e385]: "-"
+                  - cell "吴刚" [ref=e386]:
+                    - generic [ref=e387]: 吴刚
+                  - cell "进行中" [ref=e388]:
+                    - generic [ref=e391]: 进行中
+                  - cell "2026-05-20" [ref=e392]:
+                    - generic [ref=e393]: 2026-05-20
+                  - cell "2026-04-28" [ref=e394]:
+                    - generic [ref=e395]: 2026-04-28
+                  - cell "审批中" [ref=e396]:
+                    - generic [ref=e399]: 审批中
+                  - cell [ref=e400]:
+                    - button [ref=e402] [cursor=pointer]:
+                      - img [ref=e405]
+                - row "PRJ-2026-005 数据中台建设 中台 研发项目 张伟 进行中 2026-05-01 2027-04-30 已驳回" [ref=e407]:
+                  - cell "PRJ-2026-005" [ref=e408]:
+                    - generic [ref=e409]: PRJ-2026-005
+                  - cell "数据中台建设" [ref=e410]:
+                    - generic [ref=e411]: 数据中台建设
+                  - cell "中台" [ref=e412]:
+                    - generic [ref=e413]: 中台
+                  - cell "研发项目" [ref=e414]:
+                    - generic [ref=e417]: 研发项目
+                  - cell "张伟" [ref=e418]:
+                    - generic [ref=e419]: 张伟
+                  - cell "进行中" [ref=e420]:
+                    - generic [ref=e423]: 进行中
+                  - cell "2026-05-01" [ref=e424]:
+                    - generic [ref=e425]: 2026-05-01
+                  - cell "2027-04-30" [ref=e426]:
+                    - generic [ref=e427]: 2027-04-30
+                  - cell "已驳回" [ref=e428]:
+                    - generic [ref=e431]: 已驳回
+                  - cell [ref=e432]:
+                    - generic [ref=e433]:
+                      - button [ref=e434] [cursor=pointer]:
+                        - img [ref=e437]
+                      - button [ref=e439] [cursor=pointer]:
+                        - img [ref=e442]
+                      - button [ref=e445] [cursor=pointer]:
+                        - img [ref=e448]
+                - row "PRJ-2026-004 智能风控系统 - - 张伟 进行中 2026-04-01 2026-10-31 已通过" [ref=e450]:
+                  - cell "PRJ-2026-004" [ref=e451]:
+                    - generic [ref=e452]: PRJ-2026-004
+                  - cell "智能风控系统" [ref=e453]:
+                    - generic [ref=e454]: 智能风控系统
+                  - cell "-" [ref=e455]:
+                    - generic [ref=e456]: "-"
+                  - cell "-" [ref=e457]:
+                    - generic [ref=e458]: "-"
+                  - cell "张伟" [ref=e459]:
+                    - generic [ref=e460]: 张伟
+                  - cell "进行中" [ref=e461]:
+                    - generic [ref=e464]: 进行中
+                  - cell "2026-04-01" [ref=e465]:
+                    - generic [ref=e466]: 2026-04-01
+                  - cell "2026-10-31" [ref=e467]:
+                    - generic [ref=e468]: 2026-10-31
+                  - cell "已通过" [ref=e469]:
+                    - generic [ref=e472]: 已通过
+                  - cell [ref=e473]:
+                    - button [ref=e475] [cursor=pointer]:
+                      - img [ref=e478]
+                - row "PRJ-2026-003 供应链数字化平台 供应链 - Admin 进行中 2026-03-01 2027-02-28 已通过" [ref=e480]:
+                  - cell "PRJ-2026-003" [ref=e481]:
+                    - generic [ref=e482]: PRJ-2026-003
+                  - cell "供应链数字化平台" [ref=e483]:
+                    - generic [ref=e484]: 供应链数字化平台
+                  - cell "供应链" [ref=e485]:
+                    - generic [ref=e486]: 供应链
+                  - cell "-" [ref=e487]:
+                    - generic [ref=e488]: "-"
+                  - cell "Admin" [ref=e489]:
+                    - generic [ref=e490]: Admin
+                  - cell "进行中" [ref=e491]:
+                    - generic [ref=e494]: 进行中
+                  - cell "2026-03-01" [ref=e495]:
+                    - generic [ref=e496]: 2026-03-01
+                  - cell "2027-02-28" [ref=e497]:
+                    - generic [ref=e498]: 2027-02-28
+                  - cell "已通过" [ref=e499]:
+                    - generic [ref=e502]: 已通过
+                  - cell [ref=e503]:
+                    - button [ref=e505] [cursor=pointer]:
+                      - img [ref=e508]
+          - generic [ref=e510]:
+            - generic [ref=e511]: 共 12 条
+            - generic [ref=e514] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e516]
+                - generic [ref=e517]: 10条/页
+              - img [ref=e520]
+            - button "上一页" [disabled] [ref=e522]:
+              - generic:
+                - img
+            - list [ref=e523]:
+              - listitem "第 1 页" [ref=e524]: "1"
+              - listitem "第 2 页" [ref=e525] [cursor=pointer]: "2"
+            - button "下一页" [ref=e526] [cursor=pointer]:
+              - generic:
+                - img

@@ -1,0 +1,19 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: WH管理系统
+        - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]:
+        - img [ref=e15]
+        - textbox "搜索菜单" [ref=e17]
+      - menubar [ref=e18]:
+        - menuitem "主页" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e23]: 主页
+        - generic [ref=e24]: 无匹配菜单
+  - generic [ref=e25]:
+    - button [ref=e30] [cursor=pointer]:
+      - img [ref=e32]
+      - img [ref=e35]
+    - main [ref=e37]

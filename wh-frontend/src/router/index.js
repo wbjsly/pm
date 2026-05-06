@@ -53,19 +53,19 @@ const routes = [
         path: '/pm/wbs/detail/:id',
         name: 'WbsDetail',
         component: () => import('@/views/pm/wbs/detail.vue'),
-        meta: { title: 'WBS详情', hidden: true }
+        meta: { title: '任务详情', hidden: true }
       },
       {
         path: '/pm/wbs/form',
         name: 'WbsForm',
         component: () => import('@/views/pm/wbs/form.vue'),
-        meta: { title: '新增WBS', hidden: true }
+        meta: { title: '新增任务', hidden: true }
       },
       {
         path: '/pm/wbs/form/:id',
         name: 'WbsEdit',
         component: () => import('@/views/pm/wbs/form.vue'),
-        meta: { title: '编辑WBS', hidden: true }
+        meta: { title: '编辑任务', hidden: true }
       },
       {
         path: '/pm/wbs/history/:id',

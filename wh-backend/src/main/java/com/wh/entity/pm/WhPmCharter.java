@@ -50,6 +50,9 @@ public class WhPmCharter extends BaseEntity {
     @TableField("KEY_STAKEHOLDERS")
     private String keyStakeholders;
 
+    @TableField("PROGRESS")
+    private String progress;
+
     @TableField("STATUS")
     private String status;
 

@@ -25,8 +25,9 @@ public class WhPmCharterController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String pmId,
-            @RequestParam(required = false) String keyword) {
-        return R.ok(charterBo.pageList(pageNum, pageSize, status, pmId, keyword));
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String progress) {
+        return R.ok(charterBo.pageList(pageNum, pageSize, status, pmId, keyword, progress));
     }
 
     @GetMapping("/{id}")

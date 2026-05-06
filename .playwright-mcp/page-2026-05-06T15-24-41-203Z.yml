@@ -1,0 +1,426 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: WH管理系统
+        - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]:
+        - img [ref=e15]
+        - textbox "搜索菜单" [ref=e17]
+      - menubar [ref=e18]:
+        - menuitem "主页" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e23]: 主页
+        - menuitem "项目管理" [expanded] [ref=e38]:
+          - generic [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - generic [ref=e43]: 项目管理
+            - img [ref=e45]
+          - menu [ref=e47]:
+            - menuitem "项目立项" [ref=e48] [cursor=pointer]
+            - menuitem "项目任务" [ref=e49] [cursor=pointer]
+            - menuitem "预算管理" [ref=e50] [cursor=pointer]
+            - menuitem "工时管理" [ref=e51] [cursor=pointer]
+        - menuitem "产品管理" [ref=e52]:
+          - generic [ref=e53] [cursor=pointer]:
+            - img [ref=e55]
+            - generic [ref=e57]: 产品管理
+            - img [ref=e59]
+        - menuitem "系统管理" [ref=e61]:
+          - generic [ref=e62] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e66]: 系统管理
+            - img [ref=e68]
+  - generic [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - tablist [ref=e72]:
+          - tab "项目任务" [selected] [ref=e73]:
+            - text: 项目任务
+            - img [ref=e75]
+        - generic:
+          - tabpanel "项目任务"
+      - button "系统管理员" [ref=e77] [cursor=pointer]:
+        - img [ref=e32]
+        - generic [ref=e78]: 系统管理员
+        - img [ref=e35]
+    - main [ref=e37]:
+      - generic [ref=e80]:
+        - generic [ref=e82]:
+          - generic [ref=e83]: 任务管理
+          - generic [ref=e84]:
+            - generic [ref=e86] [cursor=pointer]:
+              - generic [ref=e87]:
+                - generic [ref=e89]:
+                  - generic [ref=e91]: 进行中
+                  - button "关闭此标签" [ref=e92]:
+                    - img [ref=e94]
+                - generic [ref=e99]: + 1
+                - combobox [ref=e101]
+              - img [ref=e104]
+            - textbox "搜索任务编码/名称" [ref=e108]
+            - button "查询" [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]: 查询
+            - button "重置" [ref=e111] [cursor=pointer]:
+              - generic [ref=e112]: 重置
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - generic [ref=e115] [cursor=pointer]:
+              - img [ref=e117]
+              - generic [ref=e119]: 安全合规审计平台2026
+              - generic [ref=e121]: CHARTER-2026-010
+              - generic [ref=e123]: 进行中
+              - generic [ref=e124]: "PM: 张伟"
+              - generic [ref=e125]: "工时: 272h"
+              - generic [ref=e192]:
+                - button [ref=e193]:
+                  - img [ref=e196]
+                - button [ref=e198]:
+                  - img [ref=e201]
+                - button [ref=e203]:
+                  - img [ref=e206]
+            - generic [ref=e210]:
+              - table [ref=e212]:
+                - rowgroup [ref=e224]:
+                  - row "编码 名称 产品 模块 优先级 技术难度 状态 计划完成 实际完成 操作" [ref=e225]:
+                    - columnheader "编码" [ref=e226]:
+                      - generic [ref=e227]: 编码
+                    - columnheader "名称" [ref=e228]:
+                      - generic [ref=e229]: 名称
+                    - columnheader "产品" [ref=e230]:
+                      - generic [ref=e231]: 产品
+                    - columnheader "模块" [ref=e232]:
+                      - generic [ref=e233]: 模块
+                    - columnheader "优先级" [ref=e234]:
+                      - generic [ref=e235]: 优先级
+                    - columnheader "技术难度" [ref=e236]:
+                      - generic [ref=e237]: 技术难度
+                    - columnheader "状态" [ref=e238]:
+                      - generic [ref=e239]: 状态
+                    - columnheader "计划完成" [ref=e240]:
+                      - generic [ref=e241]: 计划完成
+                    - columnheader "实际完成" [ref=e242]:
+                      - generic [ref=e243]: 实际完成
+                    - columnheader "操作" [ref=e244]:
+                      - generic [ref=e245]: 操作
+              - table [ref=e250]:
+                - rowgroup [ref=e262]:
+                  - row "1 WBS00001 CIM P1 高 开发中" [ref=e263]:
+                    - cell "1" [ref=e264]:
+                      - generic [ref=e265]: "1"
+                    - cell "WBS00001" [ref=e266]:
+                      - generic [ref=e267]: WBS00001
+                    - cell "CIM" [ref=e268]:
+                      - generic [ref=e269]: CIM
+                    - cell [ref=e270]
+                    - cell "P1" [ref=e271]:
+                      - generic [ref=e274]: P1
+                    - cell "高" [ref=e275]:
+                      - generic [ref=e278]: 高
+                    - cell "开发中" [ref=e279]:
+                      - generic [ref=e282]: 开发中
+                    - cell [ref=e283]
+                    - cell [ref=e284]
+                    - cell [ref=e285]:
+                      - generic [ref=e286]:
+                        - button [ref=e287] [cursor=pointer]:
+                          - img [ref=e290]
+                        - button [ref=e292] [cursor=pointer]:
+                          - img [ref=e295]
+                        - button [ref=e298] [cursor=pointer]:
+                          - img [ref=e301]
+                        - button [ref=e303] [cursor=pointer]:
+                          - img [ref=e306]
+                        - button [ref=e308] [cursor=pointer]:
+                          - img [ref=e311]
+                  - row "1 WBS00002 EAP P0 低 未开始" [ref=e314]:
+                    - cell "1" [ref=e315]:
+                      - generic [ref=e316]: "1"
+                    - cell "WBS00002" [ref=e317]:
+                      - generic [ref=e318]: WBS00002
+                    - cell "EAP" [ref=e319]:
+                      - generic [ref=e320]: EAP
+                    - cell [ref=e321]
+                    - cell "P0" [ref=e322]:
+                      - generic [ref=e325]: P0
+                    - cell "低" [ref=e326]:
+                      - generic [ref=e329]: 低
+                    - cell "未开始" [ref=e330]:
+                      - generic [ref=e333]: 未开始
+                    - cell [ref=e334]
+                    - cell [ref=e335]
+                    - cell [ref=e336]:
+                      - generic [ref=e337]:
+                        - button [ref=e338] [cursor=pointer]:
+                          - img [ref=e341]
+                        - button [ref=e343] [cursor=pointer]:
+                          - img [ref=e346]
+                        - button [ref=e349] [cursor=pointer]:
+                          - img [ref=e352]
+                        - button [ref=e354] [cursor=pointer]:
+                          - img [ref=e357]
+                        - button [ref=e359] [cursor=pointer]:
+                          - img [ref=e362]
+                  - row "2 WBS00003 MES P2 中 未开始" [ref=e365]:
+                    - cell "2" [ref=e366]:
+                      - generic [ref=e367]: "2"
+                    - cell "WBS00003" [ref=e368]:
+                      - generic [ref=e369]: WBS00003
+                    - cell "MES" [ref=e370]:
+                      - generic [ref=e371]: MES
+                    - cell [ref=e372]
+                    - cell "P2" [ref=e373]:
+                      - generic [ref=e376]: P2
+                    - cell "中" [ref=e377]:
+                      - generic [ref=e380]: 中
+                    - cell "未开始" [ref=e381]:
+                      - generic [ref=e384]: 未开始
+                    - cell [ref=e385]
+                    - cell [ref=e386]
+                    - cell [ref=e387]:
+                      - generic [ref=e388]:
+                        - button [ref=e389] [cursor=pointer]:
+                          - img [ref=e392]
+                        - button [ref=e394] [cursor=pointer]:
+                          - img [ref=e397]
+                        - button [ref=e400] [cursor=pointer]:
+                          - img [ref=e403]
+                        - button [ref=e405] [cursor=pointer]:
+                          - img [ref=e408]
+                        - button [ref=e410] [cursor=pointer]:
+                          - img [ref=e413]
+                  - row "3 WBS00004 CIM P3 中 未开始" [ref=e416]:
+                    - cell "3" [ref=e417]:
+                      - generic [ref=e418]: "3"
+                    - cell "WBS00004" [ref=e419]:
+                      - generic [ref=e420]: WBS00004
+                    - cell "CIM" [ref=e421]:
+                      - generic [ref=e422]: CIM
+                    - cell [ref=e423]
+                    - cell "P3" [ref=e424]:
+                      - generic [ref=e427]: P3
+                    - cell "中" [ref=e428]:
+                      - generic [ref=e431]: 中
+                    - cell "未开始" [ref=e432]:
+                      - generic [ref=e435]: 未开始
+                    - cell [ref=e436]
+                    - cell [ref=e437]
+                    - cell [ref=e438]:
+                      - generic [ref=e439]:
+                        - button [ref=e440] [cursor=pointer]:
+                          - img [ref=e443]
+                        - button [ref=e445] [cursor=pointer]:
+                          - img [ref=e448]
+                        - button [ref=e451] [cursor=pointer]:
+                          - img [ref=e454]
+                        - button [ref=e456] [cursor=pointer]:
+                          - img [ref=e459]
+                        - button [ref=e461] [cursor=pointer]:
+                          - img [ref=e464]
+                  - row "SEED-10-05 审计规则引擎 P0 高 未开始" [ref=e467]:
+                    - cell "SEED-10-05" [ref=e468]:
+                      - generic [ref=e469]: SEED-10-05
+                    - cell "审计规则引擎" [ref=e470]:
+                      - generic [ref=e471]: 审计规则引擎
+                    - cell [ref=e472]
+                    - cell [ref=e473]
+                    - cell "P0" [ref=e474]:
+                      - generic [ref=e477]: P0
+                    - cell "高" [ref=e478]:
+                      - generic [ref=e481]: 高
+                    - cell "未开始" [ref=e482]:
+                      - generic [ref=e485]: 未开始
+                    - cell [ref=e486]
+                    - cell [ref=e487]
+                    - cell [ref=e488]:
+                      - generic [ref=e489]:
+                        - button [ref=e490] [cursor=pointer]:
+                          - img [ref=e493]
+                        - button [ref=e495] [cursor=pointer]:
+                          - img [ref=e498]
+                        - button [ref=e501] [cursor=pointer]:
+                          - img [ref=e504]
+                        - button [ref=e506] [cursor=pointer]:
+                          - img [ref=e509]
+                        - button [ref=e511] [cursor=pointer]:
+                          - img [ref=e514]
+                  - row "SEED-10-06 合规检查 P1 高 未开始" [ref=e517]:
+                    - cell "SEED-10-06" [ref=e518]:
+                      - generic [ref=e519]: SEED-10-06
+                    - cell "合规检查" [ref=e520]:
+                      - generic [ref=e521]: 合规检查
+                    - cell [ref=e522]
+                    - cell [ref=e523]
+                    - cell "P1" [ref=e524]:
+                      - generic [ref=e527]: P1
+                    - cell "高" [ref=e528]:
+                      - generic [ref=e531]: 高
+                    - cell "未开始" [ref=e532]:
+                      - generic [ref=e535]: 未开始
+                    - cell [ref=e536]
+                    - cell [ref=e537]
+                    - cell [ref=e538]:
+                      - generic [ref=e539]:
+                        - button [ref=e540] [cursor=pointer]:
+                          - img [ref=e543]
+                        - button [ref=e545] [cursor=pointer]:
+                          - img [ref=e548]
+                        - button [ref=e551] [cursor=pointer]:
+                          - img [ref=e554]
+                        - button [ref=e556] [cursor=pointer]:
+                          - img [ref=e559]
+                        - button [ref=e561] [cursor=pointer]:
+                          - img [ref=e564]
+                  - row "SEED-10-07 报告生成 P1 中 未开始" [ref=e567]:
+                    - cell "SEED-10-07" [ref=e568]:
+                      - generic [ref=e569]: SEED-10-07
+                    - cell "报告生成" [ref=e570]:
+                      - generic [ref=e571]: 报告生成
+                    - cell [ref=e572]
+                    - cell [ref=e573]
+                    - cell "P1" [ref=e574]:
+                      - generic [ref=e577]: P1
+                    - cell "中" [ref=e578]:
+                      - generic [ref=e581]: 中
+                    - cell "未开始" [ref=e582]:
+                      - generic [ref=e585]: 未开始
+                    - cell [ref=e586]
+                    - cell [ref=e587]
+                    - cell [ref=e588]:
+                      - generic [ref=e589]:
+                        - button [ref=e590] [cursor=pointer]:
+                          - img [ref=e593]
+                        - button [ref=e595] [cursor=pointer]:
+                          - img [ref=e598]
+                        - button [ref=e601] [cursor=pointer]:
+                          - img [ref=e604]
+                        - button [ref=e606] [cursor=pointer]:
+                          - img [ref=e609]
+                        - button [ref=e611] [cursor=pointer]:
+                          - img [ref=e614]
+                  - row "SEED-10-08 数据看板 P2 低 未开始" [ref=e617]:
+                    - cell "SEED-10-08" [ref=e618]:
+                      - generic [ref=e619]: SEED-10-08
+                    - cell "数据看板" [ref=e620]:
+                      - generic [ref=e621]: 数据看板
+                    - cell [ref=e622]
+                    - cell [ref=e623]
+                    - cell "P2" [ref=e624]:
+                      - generic [ref=e627]: P2
+                    - cell "低" [ref=e628]:
+                      - generic [ref=e631]: 低
+                    - cell "未开始" [ref=e632]:
+                      - generic [ref=e635]: 未开始
+                    - cell [ref=e636]
+                    - cell [ref=e637]
+                    - cell [ref=e638]:
+                      - generic [ref=e639]:
+                        - button [ref=e640] [cursor=pointer]:
+                          - img [ref=e643]
+                        - button [ref=e645] [cursor=pointer]:
+                          - img [ref=e648]
+                        - button [ref=e651] [cursor=pointer]:
+                          - img [ref=e654]
+                        - button [ref=e656] [cursor=pointer]:
+                          - img [ref=e659]
+                        - button [ref=e661] [cursor=pointer]:
+                          - img [ref=e664]
+                  - row "SEED-10-09 系统测试 P1 中 未开始" [ref=e667]:
+                    - cell "SEED-10-09" [ref=e668]:
+                      - generic [ref=e669]: SEED-10-09
+                    - cell "系统测试" [ref=e670]:
+                      - generic [ref=e671]: 系统测试
+                    - cell [ref=e672]
+                    - cell [ref=e673]
+                    - cell "P1" [ref=e674]:
+                      - generic [ref=e677]: P1
+                    - cell "中" [ref=e678]:
+                      - generic [ref=e681]: 中
+                    - cell "未开始" [ref=e682]:
+                      - generic [ref=e685]: 未开始
+                    - cell [ref=e686]
+                    - cell [ref=e687]
+                    - cell [ref=e688]:
+                      - generic [ref=e689]:
+                        - button [ref=e690] [cursor=pointer]:
+                          - img [ref=e693]
+                        - button [ref=e695] [cursor=pointer]:
+                          - img [ref=e698]
+                        - button [ref=e701] [cursor=pointer]:
+                          - img [ref=e704]
+                        - button [ref=e706] [cursor=pointer]:
+                          - img [ref=e709]
+                        - button [ref=e711] [cursor=pointer]:
+                          - img [ref=e714]
+                  - row "SEED-10-10 上线部署 P0 中 未开始" [ref=e717]:
+                    - cell "SEED-10-10" [ref=e718]:
+                      - generic [ref=e719]: SEED-10-10
+                    - cell "上线部署" [ref=e720]:
+                      - generic [ref=e721]: 上线部署
+                    - cell [ref=e722]
+                    - cell [ref=e723]
+                    - cell "P0" [ref=e724]:
+                      - generic [ref=e727]: P0
+                    - cell "中" [ref=e728]:
+                      - generic [ref=e731]: 中
+                    - cell "未开始" [ref=e732]:
+                      - generic [ref=e735]: 未开始
+                    - cell [ref=e736]
+                    - cell [ref=e737]
+                    - cell [ref=e738]:
+                      - generic [ref=e739]:
+                        - button [ref=e740] [cursor=pointer]:
+                          - img [ref=e743]
+                        - button [ref=e745] [cursor=pointer]:
+                          - img [ref=e748]
+                        - button [ref=e751] [cursor=pointer]:
+                          - img [ref=e754]
+                        - button [ref=e756] [cursor=pointer]:
+                          - img [ref=e759]
+                        - button [ref=e761] [cursor=pointer]:
+                          - img [ref=e764]
+          - generic [ref=e127] [cursor=pointer]:
+            - img [ref=e129]
+            - generic [ref=e131]: 财务共享服务中心
+            - generic [ref=e133]: CHARTER-2026-009
+            - generic [ref=e135]: 进行中
+            - generic [ref=e136]: "PM: 张伟"
+            - generic [ref=e137]: "工时: 230h"
+          - generic [ref=e139] [cursor=pointer]:
+            - img [ref=e141]
+            - generic [ref=e143]: 人力资源管理系统
+            - generic [ref=e145]: CHARTER-2026-008
+            - generic [ref=e147]: 进行中
+            - generic [ref=e148]: "PM: Admin"
+            - generic [ref=e149]: "工时: 235h"
+          - generic [ref=e151] [cursor=pointer]:
+            - img [ref=e153]
+            - generic [ref=e155]: 绿色IT节能减排
+            - generic [ref=e157]: CHARTER-2026-007
+            - generic [ref=e159]: 进行中
+            - generic [ref=e160]: "PM: 张伟"
+            - generic [ref=e161]: "工时: 220h"
+          - generic [ref=e163] [cursor=pointer]:
+            - img [ref=e165]
+            - generic [ref=e167]: 移动办公App升级
+            - generic [ref=e169]: CHARTER-2026-006
+            - generic [ref=e171]: 进行中
+            - generic [ref=e172]: "PM: 张伟"
+            - generic [ref=e173]: "工时: 250h"
+          - generic [ref=e174]:
+            - generic [ref=e175]: 共 12 条
+            - generic [ref=e178] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e180]
+                - generic [ref=e181]: 5条/页
+              - img [ref=e184]
+            - button "上一页" [disabled] [ref=e186]:
+              - generic:
+                - img
+            - list [ref=e187]:
+              - listitem "第 1 页" [ref=e188]: "1"
+              - listitem "第 2 页" [ref=e189] [cursor=pointer]: "2"
+              - listitem "第 3 页" [ref=e190] [cursor=pointer]: "3"
+            - button "下一页" [ref=e191] [cursor=pointer]:
+              - generic:
+                - img
