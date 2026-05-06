@@ -28,6 +28,7 @@
 .claude/
 .git/
 .gitee/
+.playwright-mcp/
 
 # OS
 .DS_Store
