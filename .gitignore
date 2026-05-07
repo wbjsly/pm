@@ -30,6 +30,8 @@
 .gitee/
 .playwright-mcp/
 .omc/
+!.omc/plans/
+!.omc/specs/
 wh-backend/.omc/
 wh-frontend/.omc/
 
