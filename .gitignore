@@ -29,7 +29,7 @@
 .git/
 .gitee/
 .playwright-mcp/
-.omc/*
+**/.omc/*
 !.omc/plans/
 !.omc/specs/
 wh-backend/.omc/

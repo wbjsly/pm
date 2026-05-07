@@ -43,7 +43,7 @@
               :show-after="200"
             >
               <template #reference>
-                <el-link type="primary" :underline="false">
+                <el-link type="primary" underline="never">
                   <el-icon><Paperclip /></el-icon>
                   {{ getAttachments(row).length }}
                 </el-link>

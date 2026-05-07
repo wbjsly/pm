@@ -5,7 +5,7 @@
         <span style="font-weight: bold; font-size: 16px;">{{ isEdit ? '编辑成果物' : '新增成果物' }}</span>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 700px;">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 700px;" :validate-on-rule-change="false">
         <el-form-item label="所属项目" prop="projectId">
           <el-select v-model="form.projectId" placeholder="请选择已审批通过的项目" filterable
                      :disabled="isEdit" style="width: 100%">
@@ -44,7 +44,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
-          <el-button @click="$router.back()">取消</el-button>
+          <el-button @click="$router.push('/pm/deliverable')">取消</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import {
@@ -110,6 +110,8 @@ const loadDetail = async () => {
       form.remarks = d.remarks || ''
       if (d.attachments) {
         try { attachments.value = JSON.parse(d.attachments) } catch { attachments.value = [] }
+      } else {
+        attachments.value = []
       }
     }
   } catch {
@@ -170,7 +172,7 @@ const handleSave = async () => {
       })
       ElMessage.success('创建成功')
     }
-    router.back()
+    router.push("/pm/deliverable")
   } catch {
     ElMessage.error('保存失败')
   } finally {
@@ -178,10 +180,22 @@ const handleSave = async () => {
   }
 }
 
-onMounted(() => {
+const initPage = () => {
   loadProjectOptions()
-  loadDetail()
-})
+  if (isEdit.value) {
+    loadDetail()
+  } else {
+    form.projectId = ''
+    form.name = ''
+    form.description = ''
+    form.plannedDeliveryDate = ''
+    form.remarks = ''
+    attachments.value = []
+  }
+}
+
+onMounted(initPage)
+watch(() => route.params.id, () => { if (route.path.includes('/pm/deliverable/form')) initPage() })
 </script>
 
 <style scoped>

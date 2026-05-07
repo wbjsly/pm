@@ -16,7 +16,7 @@
             <el-button v-if="deliverable.status === 'APPROVED' && isPm" type="success" @click="handleDeliver">
               <el-icon><Checked /></el-icon> 标记已交付
             </el-button>
-            <el-button @click="$router.back()">返回</el-button>
+            <el-button @click="$router.push('/pm/deliverable')">返回</el-button>
           </div>
         </div>
       </template>
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import {
@@ -102,13 +102,17 @@ const formatFileSize = (bytes) => {
 }
 
 const loadDetail = async () => {
+  if (!route.params.id) return
   loading.value = true
   try {
     const res = await getDeliverableDetailApi(route.params.id)
     if (res.code === 200) {
       deliverable.value = res.data
+
       if (res.data.attachments) {
         try { attachments.value = JSON.parse(res.data.attachments) } catch { attachments.value = [] }
+      } else {
+        attachments.value = []
       }
       loadProjectName(res.data.projectId)
     }
@@ -191,9 +195,8 @@ const handleDeliver = async () => {
   }
 }
 
-onMounted(() => {
-  loadDetail()
-})
+onMounted(loadDetail)
+watch(() => route.params.id, (newId) => { if (newId && route.path.includes('/pm/deliverable/detail')) loadDetail() })
 </script>
 
 <style scoped>
