@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sqlite3 /Users/wangbing/Downloads/ai/code/pm/wh-backend/data/wh.sqlite \\\"SELECT ID, NAME FROM wh_pm_project_charter WHERE DEL_FLAG='0' LIMIT 5;\\\"\",\"description\":\"Query existing projects fr...",
+  "error": "Exit code 1\nError: in prepare, no such column: NAME\n  SELECT ID, NAME FROM wh_pm_project_charter WHERE DEL_FLAG='0' LIMIT 5;\n             ^--- error here",
+  "timestamp": "2026-05-07T11:54:33.262Z",
+  "retry_count": 1
+}

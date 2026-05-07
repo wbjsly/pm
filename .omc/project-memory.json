@@ -1,0 +1,437 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778133254728,
+  "projectRoot": "/Users/wangbing/Downloads/ai/code/pm",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "concurrently -n \"FE,BE\" -c \"green,blue\" \"npm run dev:fe\" \"npm run dev:be\"",
+      "dev:fe": "cd wh-frontend && npm run dev",
+      "dev:be": "cd wh-backend && mvn spring-boot:run",
+      "dev:db:migrate": "echo 'Database migration handled by SqliteBootstrap'",
+      "build": "cd wh-frontend && npm run build",
+      "install:all": "npm install && cd wh-frontend && npm install"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "dev",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "deploy": {
+      "path": "deploy",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1778133254683,
+      "keyFiles": [
+        "docker-compose.yml",
+        "nginx.conf"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1778133254683,
+      "keyFiles": []
+    },
+    "openspec": {
+      "path": "openspec",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1778133254689,
+      "keyFiles": [
+        "config.yaml"
+      ]
+    },
+    "wh-backend": {
+      "path": "wh-backend",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1778133254690,
+      "keyFiles": [
+        "pom.xml"
+      ]
+    },
+    "wh-frontend": {
+      "path": "wh-frontend",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1778133254691,
+      "keyFiles": [
+        "index.html",
+        "package-lock.json",
+        "package.json",
+        "vite.config.js"
+      ]
+    },
+    "wh-backend/data": {
+      "path": "wh-backend/data",
+      "purpose": "Data files",
+      "fileCount": 1,
+      "lastAccessed": 1778133254695,
+      "keyFiles": [
+        "wh.sqlite"
+      ]
+    },
+    "wh-backend/src": {
+      "path": "wh-backend/src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1778133254698,
+      "keyFiles": []
+    },
+    "wh-frontend/node_modules": {
+      "path": "wh-frontend/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1778133254702,
+      "keyFiles": []
+    },
+    "wh-frontend/src": {
+      "path": "wh-frontend/src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1778133254708,
+      "keyFiles": [
+        "App.vue",
+        "main.js"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "wh-backend/src/main/java/com/wh/bo/pm/WhPmCharterBo.java",
+      "accessCount": 11,
+      "lastAccessed": 1778151710347,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/router/index.js",
+      "accessCount": 10,
+      "lastAccessed": 1778155177194,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/bpmn/pm-charter-approval.bpmn20.xml",
+      "accessCount": 8,
+      "lastAccessed": 1778151774697,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/entity/BaseEntity.java",
+      "accessCount": 8,
+      "lastAccessed": 1778154860789,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/views/pm/charter/index.vue",
+      "accessCount": 8,
+      "lastAccessed": 1778155335107,
+      "type": "file"
+    },
+    {
+      "path": "docs/busi/srs_pm.md",
+      "accessCount": 7,
+      "lastAccessed": 1778147213224,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/entity/pm/WhPmCharter.java",
+      "accessCount": 7,
+      "lastAccessed": 1778150793577,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/controller/pm/WhPmCharterController.java",
+      "accessCount": 6,
+      "lastAccessed": 1778150906381,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/approval/pm/CharterApprovalCallback.java",
+      "accessCount": 6,
+      "lastAccessed": 1778150913981,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/dao/pm/WhPmCharterDao.java",
+      "accessCount": 5,
+      "lastAccessed": 1778150904611,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/api/pm/charter.js",
+      "accessCount": 5,
+      "lastAccessed": 1778155175856,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/service/SequenceService.java",
+      "accessCount": 4,
+      "lastAccessed": 1778150934801,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/common/R.java",
+      "accessCount": 4,
+      "lastAccessed": 1778151604339,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/bootstrap/SqliteBootstrap.java",
+      "accessCount": 3,
+      "lastAccessed": 1778148947848,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/approval/ApprovalCompletedCallback.java",
+      "accessCount": 3,
+      "lastAccessed": 1778149640225,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/approval/ApprovalCallbackRegistry.java",
+      "accessCount": 3,
+      "lastAccessed": 1778149776023,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/approval/FlowableProcessEndListener.java",
+      "accessCount": 3,
+      "lastAccessed": 1778149777388,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/security/SecurityConfig.java",
+      "accessCount": 2,
+      "lastAccessed": 1778148932380,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/010-pm-charter.sql",
+      "accessCount": 2,
+      "lastAccessed": 1778148956577,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/controller/pm/WhPmWbsElementController.java",
+      "accessCount": 2,
+      "lastAccessed": 1778148978930,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/bpmn/pm-budget-approval.bpmn20.xml",
+      "accessCount": 2,
+      "lastAccessed": 1778148982608,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/vo/CharterVO.java",
+      "accessCount": 2,
+      "lastAccessed": 1778149107883,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/bo/pm/CharterSubmitRequest.java",
+      "accessCount": 2,
+      "lastAccessed": 1778149127836,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/bo/pm/CharterCreateRequest.java",
+      "accessCount": 2,
+      "lastAccessed": 1778150933277,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/033-charter-progress.sql",
+      "accessCount": 2,
+      "lastAccessed": 1778150944497,
+      "type": "file"
+    },
+    {
+      "path": "run.sh",
+      "accessCount": 2,
+      "lastAccessed": 1778154578924,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1778154580161,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1778146306737,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 1,
+      "lastAccessed": 1778146308893,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/pom.xml",
+      "accessCount": 1,
+      "lastAccessed": 1778146335454,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1778146336645,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/WhApplication.java",
+      "accessCount": 1,
+      "lastAccessed": 1778146338265,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/application.yml",
+      "accessCount": 1,
+      "lastAccessed": 1778146341009,
+      "type": "file"
+    },
+    {
+      "path": "openspec/config.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1778146343708,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/views/dashboard/index.vue",
+      "accessCount": 1,
+      "lastAccessed": 1778146349277,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/config/BusinessDataSourceConfig.java",
+      "accessCount": 1,
+      "lastAccessed": 1778146354073,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/011-pm-integration.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147157753,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/012-pm-scope.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147158705,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/entity/pm/WhPmWbsElement.java",
+      "accessCount": 1,
+      "lastAccessed": 1778147166420,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/019-pm-procurement.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147170779,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/bpmn/pm-wbs-modify-approval.bpmn20.xml",
+      "accessCount": 1,
+      "lastAccessed": 1778147181587,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/dao/pm/WhPmWbsElementDao.java",
+      "accessCount": 1,
+      "lastAccessed": 1778147184599,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/003-approval-engine.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147189717,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/023-pm-wbs-version.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147201416,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/022-pm-wbs-product.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147202402,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/views/pm/wbs/index.vue",
+      "accessCount": 1,
+      "lastAccessed": 1778147205656,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/java/com/wh/bo/pm/WhPmWbsElementBo.java",
+      "accessCount": 1,
+      "lastAccessed": 1778147211993,
+      "type": "file"
+    },
+    {
+      "path": "wh-backend/src/main/resources/db/sqlite/034-wbs-status-migration.sql",
+      "accessCount": 1,
+      "lastAccessed": 1778147219828,
+      "type": "file"
+    },
+    {
+      "path": "docs/tech/devspec-code.md",
+      "accessCount": 1,
+      "lastAccessed": 1778147221028,
+      "type": "file"
+    },
+    {
+      "path": "wh-frontend/src/views/pm/wbs/form.vue",
+      "accessCount": 1,
+      "lastAccessed": 1778147235570,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

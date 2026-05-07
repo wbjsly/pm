@@ -157,16 +157,6 @@ com.wh.module.<domain>/
 
 | 模块 | 说明 |
 |------|------|
-| `crm/' ｜客户管理管理｜
-	├── `bidding/` | 招投标管理 |
-	├── `cert/` | 资质/证书管理 |
-	├── `contract/` | 销售合同管理 |
-	├── `customer/` | 客户与联系人管理 |
-	├── `opportunity/` | 销售商机 |
-	├── `payment/` | 回款计划与发票 |
-	├── `sales/` | 销售与报价 |
-	├── `leads/` | 销售线索 |
-	├── `product/` | 产品目录 |
 ｜pm/ ｜项目管理 ｜
 	├── common/    | 公共适配器 |
 	├── cost/   | 成本管理 |
@@ -181,25 +171,6 @@ com.wh.module.<domain>/
 	├── task/       |  任务管理 |
 	├── timesheet/      | 工时填报 |
 	└── travel/       | 差旅费用 |
-｜pur/ | 采购管理｜
-｜fin/ |财务管理 |
-	├──expense/  | 费用报销 |
-    ├──fund/     | 资金周报 |
-    ├──receive/ ｜ 回款｜
-	├──pay /｜付款｜
-	├──store /｜存货｜
-｜hr/ | 人力资源管理 |
-｜admin/| 行政管理｜
-	├──`vehicle/` | 车队/车辆管理 |
-	├──`adminoffice/` | 行政办公（名片、用餐、机票申请、设备） |
-| `srm/ `| 供应商关系管理｜
-| `governance/` | 治理与工作流 |
-	├──`system/` | 系统管理（用户、角色、部门、字典） |
-	├──`dashboard/` | 仪表盘与报表 |
-	├──`report/` | 报表 |
-	├──`approval/` | 审批引擎集成（Flowable 核心封装） |
-	├──`migration/` | 数据迁移工具 |
-	├──`wechat/` | 企业微信集成 |
 
 
 ### 2.6 审批引擎集成（Flowable 6.8.0）

@@ -79,6 +79,31 @@ const routes = [
         component: () => import('@/views/pm/product/index.vue'),
         meta: { title: '产品管理', group: '项目管理', perm: 'ROLE_PM' }
       },
+      // Deliverable Management routes
+      {
+        path: '/pm/deliverable',
+        name: 'DeliverableList',
+        component: () => import('@/views/pm/deliverable/index.vue'),
+        meta: { title: '成果物管理', group: '项目管理', perm: 'ROLE_PM,ROLE_SPONSOR' }
+      },
+      {
+        path: '/pm/deliverable/detail/:id',
+        name: 'DeliverableDetail',
+        component: () => import('@/views/pm/deliverable/detail.vue'),
+        meta: { title: '成果物详情', hidden: true }
+      },
+      {
+        path: '/pm/deliverable/form',
+        name: 'DeliverableForm',
+        component: () => import('@/views/pm/deliverable/form.vue'),
+        meta: { title: '新增成果物', hidden: true }
+      },
+      {
+        path: '/pm/deliverable/form/:id',
+        name: 'DeliverableEdit',
+        component: () => import('@/views/pm/deliverable/form.vue'),
+        meta: { title: '编辑成果物', hidden: true }
+      },
       // Budget Management routes
       {
         path: '/pm/budget',
