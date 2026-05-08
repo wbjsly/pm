@@ -49,12 +49,18 @@
                 </el-link>
               </template>
               <div v-for="(att, idx) in getAttachments(row)" :key="idx"
-                   style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;"
+                   class="attach-item"
                    :style="idx > 0 ? 'border-top: 1px solid #eee;' : ''">
-                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;">
+                <el-button v-if="row.status === 'DRAFT' || row.status === 'REJECTED'"
+                           link type="danger" class="attach-del-btn"
+                           @click.stop="handleDeleteAttachment(row, idx)">
+                  <el-icon><Close /></el-icon>
+                </el-button>
+                <el-link type="default" underline="never"
+                         class="attach-link"
+                         @click="handleDownload(row.id, idx)">
                   <el-icon><Document /></el-icon> {{ att.fileName }}
-                </span>
-                <el-button link type="primary" size="small" @click="handleDownload(row.id, idx)">下载</el-button>
+                </el-link>
               </div>
             </el-popover>
             <span v-else style="color: #999;">0</span>
@@ -119,10 +125,10 @@
 <script setup>
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { getDeliverableListApi, deleteDeliverableApi, submitDeliverableApi, getDeliverableAttachmentUrlApi } from '@/api/pm/deliverable'
+import { getDeliverableListApi, deleteDeliverableApi, submitDeliverableApi, getDeliverableAttachmentUrlApi, deleteDeliverableAttachmentApi } from '@/api/pm/deliverable'
 import { getCharterListApi } from '@/api/pm/charter'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, Edit, Promotion, Delete, Plus, Paperclip, Document } from '@element-plus/icons-vue'
+import { View, Edit, Promotion, Delete, Plus, Paperclip, Document, Close } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -151,6 +157,8 @@ const getAttachments = (row) => {
   if (!row.attachments) return []
   try {
     return JSON.parse(row.attachments)
+      .filter(a => !a.deleted)
+      .sort((a, b) => (a.fileName || '').localeCompare(b.fileName || ''))
   } catch {
     return []
   }
@@ -215,6 +223,19 @@ const handleDownload = async (deliverableId, index) => {
   }
 }
 
+const handleDeleteAttachment = async (row, index) => {
+  try {
+    await ElMessageBox.confirm('确认删除该附件？', '提示', { type: 'warning' })
+    const res = await deleteDeliverableAttachmentApi(row.id, index)
+    if (res.code === 200) {
+      row.attachments = JSON.stringify(res.data)
+      ElMessage.success('删除成功')
+    }
+  } catch {
+    // cancelled or error
+  }
+}
+
 onMounted(loadData)
 onActivated(loadData)
 </script>
@@ -222,5 +243,30 @@ onActivated(loadData)
 <style scoped>
 .deliverable-list {
   padding: 8px;
+}
+</style>
+
+<style>
+.attach-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+.attach-link {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  justify-content: flex-start;
+  color: #333 !important;
+}
+.attach-link:hover {
+  color: #409eff !important;
+}
+.attach-del-btn {
+  flex-shrink: 0;
+  margin-right: 2px;
+  font-size: 14px;
 }
 </style>

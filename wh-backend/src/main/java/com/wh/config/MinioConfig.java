@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
 
 @Slf4j
 @Configuration
@@ -26,24 +25,22 @@ public class MinioConfig {
     @Value("${app.minio.bucket}")
     private String bucket;
 
-    private MinioClient minioClient;
-
     @Bean
     public MinioClient minioClient() {
-        this.minioClient = MinioClient.builder()
+        MinioClient client = MinioClient.builder()
                 .endpoint(endpoint)
                 .credentials(accessKey, secretKey)
                 .build();
-        return this.minioClient;
+        initBucket(client);
+        return client;
     }
 
-    @PostConstruct
-    public void initBucket() {
+    private void initBucket(MinioClient client) {
         try {
-            boolean exists = minioClient.bucketExists(
+            boolean exists = client.bucketExists(
                     BucketExistsArgs.builder().bucket(bucket).build());
             if (!exists) {
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+                client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
                 log.info("MinIO bucket created: {}", bucket);
             } else {
                 log.info("MinIO bucket already exists: {}", bucket);

@@ -110,7 +110,7 @@ const loadDetail = async () => {
       deliverable.value = res.data
 
       if (res.data.attachments) {
-        try { attachments.value = JSON.parse(res.data.attachments) } catch { attachments.value = [] }
+        try { attachments.value = JSON.parse(res.data.attachments).filter(a => !a.deleted) } catch { attachments.value = [] }
       } else {
         attachments.value = []
       }

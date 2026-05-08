@@ -15,7 +15,6 @@ import com.wh.util.SecurityUtils;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.engine.RuntimeService;
@@ -84,6 +83,9 @@ public class WhPmDeliverableBo {
         wrapper.orderByDesc(WhPmDeliverable::getCreateDate);
         IPage<WhPmDeliverable> result = deliverableDao.selectPage(page, wrapper);
         fillCreateByName(result.getRecords());
+        for (WhPmDeliverable d : result.getRecords()) {
+            d.setAttachments(toJson(filterActiveAttachments(d.getAttachments())));
+        }
         return result;
     }
 
@@ -176,7 +178,7 @@ public class WhPmDeliverableBo {
             throw new ServiceException("只有草稿状态的成果物可以删除");
         }
         checkIsProjectPm(deliverable);
-        deliverableDao.physicalDeleteById(id);
+        deliverableDao.deleteById(id);
     }
 
     // ─── WORKFLOW METHODS ───
@@ -280,7 +282,8 @@ public class WhPmDeliverableBo {
         checkIsProjectPm(deliverable);
 
         List<Map<String, Object>> attachments = parseAttachments(deliverable.getAttachments());
-        if (attachments.size() >= MAX_ATTACHMENTS) {
+        long activeCount = attachments.stream().filter(a -> !Boolean.TRUE.equals(a.get("deleted"))).count();
+        if (activeCount >= MAX_ATTACHMENTS) {
             throw new ServiceException("附件数量已达上限（" + MAX_ATTACHMENTS + "个）");
         }
 
@@ -311,7 +314,7 @@ public class WhPmDeliverableBo {
         if (rows == 0) {
             throw new ServiceException("数据已被他人修改，请刷新后重试");
         }
-        return attachments;
+        return filterActiveAttachments(toJson(attachments));
     }
 
     @Transactional
@@ -323,33 +326,39 @@ public class WhPmDeliverableBo {
         checkIsProjectPm(deliverable);
 
         List<Map<String, Object>> attachments = parseAttachments(deliverable.getAttachments());
-        if (index < 0 || index >= attachments.size()) {
+        attachments.sort((a, b) -> {
+            String nameA = (String) a.getOrDefault("fileName", "");
+            String nameB = (String) b.getOrDefault("fileName", "");
+            return nameA.compareTo(nameB);
+        });
+        int targetIdx = -1;
+        int nonDeleted = 0;
+        for (int i = 0; i < attachments.size(); i++) {
+            if (!Boolean.TRUE.equals(attachments.get(i).get("deleted"))) {
+                if (nonDeleted == index) {
+                    targetIdx = i;
+                    break;
+                }
+                nonDeleted++;
+            }
+        }
+        if (targetIdx == -1) {
             throw new ServiceException("附件索引无效");
         }
 
-        Map<String, Object> removed = attachments.remove(index);
-        String objectKey = (String) removed.get("minioKey");
-        if (objectKey != null) {
-            try {
-                minioClient.removeObject(
-                        RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build()
-                );
-            } catch (Exception e) {
-                log.warn("Failed to delete file from MinIO: {}", objectKey, e);
-            }
-        }
+        attachments.get(targetIdx).put("deleted", true);
 
         deliverable.setAttachments(toJson(attachments));
         int rows = deliverableDao.updateById(deliverable);
         if (rows == 0) {
             throw new ServiceException("数据已被他人修改，请刷新后重试");
         }
-        return attachments;
+        return filterActiveAttachments(toJson(attachments));
     }
 
     public String getAttachmentDownloadUrl(String id, int index) {
         WhPmDeliverable deliverable = getById(id);
-        List<Map<String, Object>> attachments = parseAttachments(deliverable.getAttachments());
+        List<Map<String, Object>> attachments = filterActiveAttachments(deliverable.getAttachments());
         if (index < 0 || index >= attachments.size()) {
             throw new ServiceException("附件索引无效");
         }
@@ -416,5 +425,21 @@ public class WhPmDeliverableBo {
 
     private String toJson(List<Map<String, Object>> attachments) {
         return cn.hutool.json.JSONUtil.toJsonStr(attachments);
+    }
+
+    public List<Map<String, Object>> filterActiveAttachments(String attachmentsJson) {
+        List<Map<String, Object>> all = parseAttachments(attachmentsJson);
+        List<Map<String, Object>> active = new ArrayList<>();
+        for (Map<String, Object> att : all) {
+            if (!Boolean.TRUE.equals(att.get("deleted"))) {
+                active.add(att);
+            }
+        }
+        active.sort((a, b) -> {
+            String nameA = (String) a.getOrDefault("fileName", "");
+            String nameB = (String) b.getOrDefault("fileName", "");
+            return nameA.compareTo(nameB);
+        });
+        return active;
     }
 }

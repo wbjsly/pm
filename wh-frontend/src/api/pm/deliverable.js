@@ -39,9 +39,7 @@ export function deliverDeliverableApi(id) {
 export function uploadDeliverableAttachmentApi(id, file) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post(`/pm/deliverables/${id}/attachments`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  return request.post(`/pm/deliverables/${id}/attachments`, formData)
 }
 
 export function deleteDeliverableAttachmentApi(id, index) {

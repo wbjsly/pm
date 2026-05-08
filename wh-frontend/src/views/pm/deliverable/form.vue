@@ -109,7 +109,7 @@ const loadDetail = async () => {
       form.plannedDeliveryDate = d.plannedDeliveryDate
       form.remarks = d.remarks || ''
       if (d.attachments) {
-        try { attachments.value = JSON.parse(d.attachments) } catch { attachments.value = [] }
+        try { attachments.value = JSON.parse(d.attachments).filter(a => !a.deleted) } catch { attachments.value = [] }
       } else {
         attachments.value = []
       }
@@ -137,14 +137,16 @@ const handleFileSelect = async (file) => {
 
 const handleRemoveAttachment = async (index) => {
   try {
-    await ElMessageBox.confirm('确定要删除该附件吗？', '确认', { type: 'warning' })
+    await ElMessageBox.confirm('确认删除该附件？', '提示', { type: 'warning' })
     const res = await deleteDeliverableAttachmentApi(route.params.id, index)
     if (res.code === 200) {
       attachments.value = res.data || []
       ElMessage.success('删除成功')
     }
-  } catch {
-    // cancelled or error
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除附件失败')
+    }
   }
 }
 

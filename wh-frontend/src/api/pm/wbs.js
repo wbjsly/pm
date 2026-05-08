@@ -56,8 +56,7 @@ export function importWbsApi(file, projectId) {
   const formData = new FormData()
   formData.append('file', file)
   return request.post('/pm/wbs/import', formData, {
-    params: { projectId },
-    headers: { 'Content-Type': 'multipart/form-data' }
+    params: { projectId }
   })
 }
 

@@ -5,6 +5,7 @@ import com.wh.bo.pm.DeliverableCreateRequest;
 import com.wh.bo.pm.DeliverableSubmitRequest;
 import com.wh.bo.pm.DeliverableUpdateRequest;
 import com.wh.bo.pm.WhPmDeliverableBo;
+import cn.hutool.json.JSONUtil;
 import com.wh.common.R;
 import com.wh.entity.pm.WhPmDeliverable;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,10 @@ public class WhPmDeliverableController {
 
     @GetMapping("/{id}")
     public R<WhPmDeliverable> detail(@PathVariable String id) {
-        return R.ok(deliverableBo.getById(id));
+        WhPmDeliverable deliverable = deliverableBo.getById(id);
+        List<Map<String, Object>> activeAttachments = deliverableBo.filterActiveAttachments(deliverable.getAttachments());
+        deliverable.setAttachments(JSONUtil.toJsonStr(activeAttachments));
+        return R.ok(deliverable);
     }
 
     @PostMapping
