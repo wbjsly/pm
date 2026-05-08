@@ -38,13 +38,14 @@
       </el-descriptions>
 
       <div v-if="attachments.length > 0" style="margin-top: 20px;">
-        <h4 style="margin-bottom: 12px;">附件 ({{ attachments.length }})</h4>
+        <h4 style="margin-bottom: 12px;">附件
+          <el-link type="default" underline="always" class="attach-count" @click="handleDownloadAll">({{ attachments.length }})</el-link>
+        </h4>
         <div v-for="(att, idx) in attachments" :key="idx" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
           <el-icon><Document /></el-icon>
-          <span>{{ att.fileName }}</span>
+          <el-link type="default" underline="never" class="attach-filename" @click="handleDownload(idx, att.fileName)">{{ att.fileName }}</el-link>
           <span style="color: #999; font-size: 12px;">{{ formatFileSize(att.fileSize) }}</span>
-          <span style="color: #999; font-size: 12px;">{{ att.uploadTime }}</span>
-          <el-button link type="primary" @click="handleDownload(idx)">下载</el-button>
+          <span style="color: #999; font-size: 12px;">{{ formatUploadTime(att.uploadTime) }}</span>
         </div>
       </div>
     </el-card>
@@ -66,7 +67,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import {
   getDeliverableDetailApi, approveDeliverableApi, rejectDeliverableApi,
-  deliverDeliverableApi, getDeliverableAttachmentUrlApi
+  deliverDeliverableApi, downloadDeliverableAttachmentApi, downloadDeliverableAttachmentsZipApi
 } from '@/api/pm/deliverable'
 import { getCharterDetailApi } from '@/api/pm/charter'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -83,6 +84,7 @@ const isSponsor = computed(() => roles.value.some(r => r.toLowerCase().includes(
 const deliverable = ref({})
 const attachments = ref([])
 const projectName = ref('')
+const projectShortName = ref('')
 const loading = ref(false)
 
 const statusTagType = (status) => {
@@ -99,6 +101,11 @@ const formatFileSize = (bytes) => {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+const formatUploadTime = (time) => {
+  if (!time) return '-'
+  return time.substring(0, 19)
 }
 
 const loadDetail = async () => {
@@ -129,18 +136,45 @@ const loadProjectName = async (projectId) => {
     const res = await getCharterDetailApi(projectId)
     if (res.code === 200) {
       projectName.value = res.data.projectName
+      projectShortName.value = res.data.projectShortName || res.data.projectName
     }
   } catch { /* ignore */ }
 }
 
-const handleDownload = async (index) => {
+const handleDownload = async (index, filename) => {
   try {
-    const res = await getDeliverableAttachmentUrlApi(route.params.id, index)
-    if (res.code === 200) {
-      window.open(res.data, '_blank')
-    }
+    const blob = await downloadDeliverableAttachmentApi(route.params.id, index)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
   } catch {
-    ElMessage.error('获取下载链接失败')
+    ElMessage.error('下载附件失败')
+  }
+}
+
+const handleDownloadAll = async () => {
+  try {
+    const blob = await downloadDeliverableAttachmentsZipApi(route.params.id)
+    const ts = new Date().toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\..+/, '')
+      .replace('T', '')
+    const filename = `${projectShortName.value}-${deliverable.value.name}-${ts}.zip`
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('下载附件失败')
   }
 }
 
@@ -202,5 +236,18 @@ watch(() => route.params.id, (newId) => { if (newId && route.path.includes('/pm/
 <style scoped>
 .deliverable-detail {
   padding: 8px;
+}
+.attach-filename {
+  font-size: 14px;
+}
+.attach-filename:hover {
+  color: #409eff !important;
+}
+.attach-count {
+  font-size: 14px;
+  font-weight: normal;
+}
+.attach-count:hover {
+  color: #409eff !important;
 }
 </style>

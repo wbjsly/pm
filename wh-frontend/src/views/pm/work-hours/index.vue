@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import MonthCalendar from '@/components/MonthCalendar.vue'
 import WorkHourDialog from '@/components/WorkHourDialog.vue'
@@ -47,11 +47,12 @@ import { getWorkCalendarMonthApi } from '@/api/system/workCalendar'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const now = new Date()
-const year = ref(now.getFullYear())
-const month = ref(now.getMonth() + 1)
+const year = ref(route.query.year ? parseInt(route.query.year) : now.getFullYear())
+const month = ref(route.query.month ? parseInt(route.query.month) : now.getMonth() + 1)
 const workLogs = ref([])
 const workDays = ref([])
 const calendarMap = ref({})

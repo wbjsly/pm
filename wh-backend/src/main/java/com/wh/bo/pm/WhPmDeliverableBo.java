@@ -12,10 +12,9 @@ import com.wh.entity.pm.WhPmDeliverable;
 import com.wh.entity.system.SysUser;
 import com.wh.service.SequenceService;
 import com.wh.util.SecurityUtils;
-import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -25,12 +24,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -356,26 +357,72 @@ public class WhPmDeliverableBo {
         return filterActiveAttachments(toJson(attachments));
     }
 
-    public String getAttachmentDownloadUrl(String id, int index) {
+    public byte[] getAttachmentBytes(String id, int index) {
         WhPmDeliverable deliverable = getById(id);
         List<Map<String, Object>> attachments = filterActiveAttachments(deliverable.getAttachments());
         if (index < 0 || index >= attachments.size()) {
             throw new ServiceException("附件索引无效");
         }
         String objectKey = (String) attachments.get(index).get("minioKey");
-        try {
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .bucket(bucket)
-                            .object(objectKey)
-                            .method(Method.GET)
-                            .expiry(1, TimeUnit.HOURS)
-                            .build()
-            );
+        try (var stream = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+            return stream.readAllBytes();
         } catch (Exception e) {
-            log.error("Failed to generate presigned URL for: {}", objectKey, e);
-            throw new ServiceException("生成下载链接失败");
+            log.error("Failed to read file from MinIO: {}", objectKey, e);
+            throw new ServiceException("下载文件失败");
         }
+    }
+
+    public String getAttachmentFilename(String id, int index) {
+        WhPmDeliverable deliverable = getById(id);
+        List<Map<String, Object>> attachments = filterActiveAttachments(deliverable.getAttachments());
+        if (index < 0 || index >= attachments.size()) {
+            throw new ServiceException("附件索引无效");
+        }
+        return (String) attachments.get(index).get("fileName");
+    }
+
+    public byte[] getAttachmentDownloadZip(String id) {
+        WhPmDeliverable deliverable = getById(id);
+        List<Map<String, Object>> attachments = filterActiveAttachments(deliverable.getAttachments());
+        if (attachments.isEmpty()) {
+            throw new ServiceException("没有可下载的附件");
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            for (Map<String, Object> att : attachments) {
+                String objectKey = (String) att.get("minioKey");
+                String fileName = (String) att.get("fileName");
+                try (var stream = minioClient.getObject(
+                        GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+                    byte[] data = stream.readAllBytes();
+                    ZipEntry entry = new ZipEntry(fileName);
+                    zos.putNextEntry(entry);
+                    zos.write(data);
+                    zos.closeEntry();
+                } catch (Exception e) {
+                    log.error("Failed to read file from MinIO: {}", objectKey, e);
+                    throw new ServiceException("读取文件失败: " + fileName);
+                }
+            }
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to create zip", e);
+            throw new ServiceException("打包压缩失败");
+        }
+        return baos.toByteArray();
+    }
+
+    public String getZipDownloadFilename(String id) {
+        WhPmDeliverable deliverable = getById(id);
+        WhPmCharter charter = charterDao.selectById(deliverable.getProjectId());
+        String shortName = charter != null && charter.getProjectShortName() != null
+                ? charter.getProjectShortName() : (charter != null ? charter.getProjectName() : "unknown");
+        String deliverableName = deliverable.getName() != null ? deliverable.getName() : "未知";
+        String timestamp = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return shortName + "-" + deliverableName + "-" + timestamp + ".zip";
     }
 
     // ─── PERMISSION HELPERS ───

@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -98,8 +100,31 @@ public class WhPmDeliverableController {
     }
 
     @GetMapping("/{id}/attachments/{index}")
-    public R<String> downloadAttachment(@PathVariable String id,
-                                         @PathVariable int index) {
-        return R.ok(deliverableBo.getAttachmentDownloadUrl(id, index));
+    public void downloadAttachment(@PathVariable String id,
+                                    @PathVariable int index,
+                                    HttpServletResponse response) throws IOException {
+        byte[] data = deliverableBo.getAttachmentBytes(id, index);
+        String filename = deliverableBo.getAttachmentFilename(id, index);
+        String encodedFilename = java.net.URLEncoder.encode(filename, "UTF-8")
+                .replaceAll("\\+", "%20");
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition",
+                "attachment; filename*=UTF-8''" + encodedFilename);
+        response.setContentLength(data.length);
+        response.getOutputStream().write(data);
+    }
+
+    @GetMapping("/{id}/attachments/zip")
+    public void downloadAttachmentsZip(@PathVariable String id,
+                                       HttpServletResponse response) throws IOException {
+        byte[] zipBytes = deliverableBo.getAttachmentDownloadZip(id);
+        String filename = deliverableBo.getZipDownloadFilename(id);
+        String encodedFilename = java.net.URLEncoder.encode(filename, "UTF-8")
+                .replaceAll("\\+", "%20");
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition",
+                "attachment; filename*=UTF-8''" + encodedFilename);
+        response.setContentLength(zipBytes.length);
+        response.getOutputStream().write(zipBytes);
     }
 }

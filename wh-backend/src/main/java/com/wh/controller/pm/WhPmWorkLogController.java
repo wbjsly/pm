@@ -91,6 +91,13 @@ public class WhPmWorkLogController {
         return R.ok(workLogBo.batchReject(userId, req.getIds(), req.getReason()));
     }
 
+    @GetMapping("/by-project")
+    public R<List<WhPmWorkLog>> byProject(@RequestParam String projectId,
+                                           @RequestParam String year,
+                                           @RequestParam int month) {
+        return R.ok(workLogBo.getByProjectAndMonth(projectId, year, month));
+    }
+
     @GetMapping("/stats")
     public R<WorkHoursStatsVO> stats(@RequestParam String year, @RequestParam int month) {
         String userId = SecurityUtils.getCurrentUserId();

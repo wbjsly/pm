@@ -58,6 +58,24 @@ public class WhPmWorkLogBo {
     }
 
     /**
+     * Get work logs by project and month (for project detail page)
+     */
+    public List<WhPmWorkLog> getByProjectAndMonth(String projectId, String year, int month) {
+        YearMonth ym = YearMonth.of(Integer.parseInt(year), month);
+        String startDate = ym.atDay(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String endDate = ym.atEndOfMonth().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        LambdaQueryWrapper<WhPmWorkLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WhPmWorkLog::getProjectId, projectId)
+               .ge(WhPmWorkLog::getLogDate, startDate)
+               .le(WhPmWorkLog::getLogDate, endDate)
+               .eq(WhPmWorkLog::getDelFlag, "0");
+        List<WhPmWorkLog> logs = workLogDao.selectList(wrapper);
+        enrichLogs(logs);
+        return logs;
+    }
+
+    /**
      * Get pending work logs for a PM
      */
     public List<WhPmWorkLog> getPendingByPm(String pmId, String year, int month) {

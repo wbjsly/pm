@@ -8,7 +8,7 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 700px;" :validate-on-rule-change="false">
         <el-form-item label="所属项目" prop="projectId">
           <el-select v-model="form.projectId" placeholder="请选择已审批通过的项目" filterable
-                     :disabled="isEdit" style="width: 100%">
+                     :disabled="projectDisabled" style="width: 100%">
             <el-option v-for="p in projectOptions" :key="p.id" :label="p.projectName" :value="p.id" />
           </el-select>
         </el-form-item>
@@ -68,6 +68,8 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const isEdit = computed(() => !!route.params.id)
+const fromProjectId = computed(() => route.query.projectId)
+const projectDisabled = computed(() => !!fromProjectId.value || isEdit.value)
 const formRef = ref(null)
 const saving = ref(false)
 const uploading = ref(false)
@@ -174,7 +176,8 @@ const handleSave = async () => {
       })
       ElMessage.success('创建成功')
     }
-    router.push("/pm/deliverable")
+    const targetId = fromProjectId.value || form.projectId
+    router.push(`/pm/deliverable?refresh=true&projectId=${targetId}`)
   } catch {
     ElMessage.error('保存失败')
   } finally {
@@ -187,7 +190,7 @@ const initPage = () => {
   if (isEdit.value) {
     loadDetail()
   } else {
-    form.projectId = ''
+    form.projectId = fromProjectId.value || ''
     form.name = ''
     form.description = ''
     form.plannedDeliveryDate = ''

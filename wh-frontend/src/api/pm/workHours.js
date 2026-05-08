@@ -40,6 +40,10 @@ export function batchRejectWorkHoursApi(ids, reason) {
   return request.post('/pm/work-hours/batch-reject', { ids, reason })
 }
 
+export function getWorkHoursByProjectApi(projectId, year, month) {
+  return request.get('/pm/work-hours/by-project', { params: { projectId, year, month } })
+}
+
 export function getWorkHoursStatsApi(year, month) {
   return request.get('/pm/work-hours/stats', { params: { year, month } })
 }

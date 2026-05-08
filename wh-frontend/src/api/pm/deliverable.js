@@ -46,6 +46,10 @@ export function deleteDeliverableAttachmentApi(id, index) {
   return request.delete(`/pm/deliverables/${id}/attachments/${index}`)
 }
 
-export function getDeliverableAttachmentUrlApi(id, index) {
-  return request.get(`/pm/deliverables/${id}/attachments/${index}`)
+export function downloadDeliverableAttachmentApi(id, index) {
+  return request.get(`/pm/deliverables/${id}/attachments/${index}`, { responseType: 'blob' })
+}
+
+export function downloadDeliverableAttachmentsZipApi(id) {
+  return request.get(`/pm/deliverables/${id}/attachments/zip`, { responseType: 'blob' })
 }
