@@ -19,10 +19,11 @@
             </el-select>
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
-            <el-button type="primary" @click="handleCreate">
-              <el-icon><Plus /></el-icon>
-              新增预算
-            </el-button>
+            <el-tooltip content="新增预算" placement="top">
+              <el-button type="primary" @click="handleCreate">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
         </div>
       </template>

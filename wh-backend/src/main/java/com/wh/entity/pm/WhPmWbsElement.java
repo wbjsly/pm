@@ -68,6 +68,9 @@ public class WhPmWbsElement extends BaseEntity {
     @TableField("LATEST_PLANNED_END_DATE")
     private String latestPlannedEndDate;
 
+    @TableField("PLANNED_START_DATE")
+    private String plannedStartDate;
+
     @TableField("ACTUAL_START_DATE")
     private String actualStartDate;
 

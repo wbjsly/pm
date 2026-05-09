@@ -25,7 +25,7 @@
         <el-table-column prop="phone" label="手机" width="140" />
         <el-table-column label="角色" width="160">
           <template #default="{ row }">
-            <el-tag v-for="role in row.roles" :key="role" size="small" style="margin-right: 4px">{{ role }}</el-tag>
+            <el-tag v-for="role in row.roles" :key="role" size="small" style="margin-right: 4px">{{ roleMap[role] || role }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -99,7 +99,7 @@
 <script setup>
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUserListApi, deleteUserApi, resetPasswordApi, updateUserApi } from '@/api/system/user'
+import { getUserListApi, deleteUserApi, resetPasswordApi, updateUserApi, getAllRolesApi } from '@/api/system/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, RefreshRight, Delete, SwitchButton } from '@element-plus/icons-vue'
 
@@ -109,6 +109,7 @@ const loading = ref(false)
 const tableData = ref([])
 const tableKey = ref(0)
 const total = ref(0)
+const roleMap = ref({})
 
 const queryParams = reactive({
   pageNum: 1,
@@ -139,8 +140,18 @@ const passwordRules = {
   ]
 }
 
-onMounted(loadData)
+onMounted(() => { loadRoles(); loadData() })
 onActivated(loadData)
+
+async function loadRoles() {
+  try {
+    const res = await getAllRolesApi()
+    const roles = res.data || []
+    roles.forEach(r => { roleMap.value[r.roleCode] = r.roleName })
+  } catch {
+    // Ignore
+  }
+}
 
 async function loadData() {
   loading.value = true

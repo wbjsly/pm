@@ -76,9 +76,10 @@
       <span>本月汇总: <strong>{{ monthTotal }}</strong> 小时</span>
       <span v-if="stats" class="summary-stats">
         | 工作日: {{ stats.workDays }}天
+        | 标准工时: {{ stats.workDays * 8 }}h
         | 满额: {{ stats.filledDays }}天
         | 未录入: {{ stats.unfilledDays }}天
-        | 不足: {{ stats.partialDays }}天
+        | 部分录入天数: {{ stats.partialDays }}天
         | 缺口: {{ stats.gapHours }}h
       </span>
     </div>
@@ -151,7 +152,12 @@ const calendarWeeks = computed(() => {
         projectShortName: l.projectShortName || '?',
         hours: parseFloat(l.hoursWorked) || 0,
         status: l.status,
-        logDate: l.logDate
+        logDate: l.logDate,
+        workDescription: l.workDescription,
+        blockerReason: l.blockerReason,
+        approverName: l.approverName,
+        createByName: l.createByName,
+        updateDate: l.updateDate
       }))
 
       const calData = props.calendarMap[dateStr] || {}

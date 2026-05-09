@@ -55,9 +55,9 @@
         <div v-if="expandedProjectId === project.id" style="padding: 12px 0;">
           <el-table :data="wbsTreeData" row-key="id" :tree-props="{ children: 'children' }" v-loading="loading" stripe>
             <el-table-column prop="wbsCode" label="编码" width="140" />
-            <el-table-column prop="name" label="名称" min-width="120" />
-            <el-table-column prop="productName" label="产品" width="100" />
-            <el-table-column prop="moduleName" label="模块" width="80" />
+            <el-table-column prop="name" label="名称" min-width="140" />
+            <el-table-column prop="productName" label="产品" width="180" />
+            <el-table-column prop="moduleName" label="模块" width="180" />
             <el-table-column prop="priority" label="优先级" width="80">
               <template #default="{ row }">
                 <el-tag v-if="row.priority" :type="priorityTagType(row.priority)" size="small">{{ priorityLabel(row.priority) }}</el-tag>

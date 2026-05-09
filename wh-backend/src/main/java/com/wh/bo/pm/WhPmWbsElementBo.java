@@ -211,10 +211,13 @@ public class WhPmWbsElementBo {
         element.setPriority(req.getPriority());
         element.setTechDifficulty(req.getTechDifficulty());
         element.setRemarks(req.getRemarks());
+        element.setPlannedStartDate(req.getPlannedStartDate());
+        element.setLatestPlannedEndDate(req.getPlannedEndDate());
     }
 
     private boolean datesChanged(WhPmWbsElement element, WbsUpdateRequest req) {
-        return !Objects.equals(element.getLatestPlannedEndDate(), req.getPlannedEndDate());
+        return !Objects.equals(element.getPlannedStartDate(), req.getPlannedStartDate())
+            || !Objects.equals(element.getLatestPlannedEndDate(), req.getPlannedEndDate());
     }
 
     private void createNewVersion(WhPmWbsElement element, WbsUpdateRequest req) {
@@ -227,9 +230,6 @@ public class WhPmWbsElementBo {
         String actualEnd = versions.isEmpty() ? null : versions.get(0).getActualEndDate();
 
         createVersion(element.getId(), newVer, req.getPlannedStartDate(), req.getPlannedEndDate(), actualStart, actualEnd);
-
-        // Sync latestPlannedEndDate
-        element.setLatestPlannedEndDate(req.getPlannedEndDate());
     }
 
     private void createVersion(String wbsId, BigDecimal versionNumber, String plannedStart,

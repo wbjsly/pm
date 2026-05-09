@@ -41,4 +41,7 @@ public class WhPmWorkLog extends BaseEntity {
 
     @TableField(exist = false)
     private String createByName;
+
+    @TableField(exist = false)
+    private String approverName;
 }

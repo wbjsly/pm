@@ -5,22 +5,42 @@
     width="500px"
     @close="handleClose"
   >
+    <!-- Approval status info (edit mode only) -->
+    <div v-if="isEdit" class="status-info">
+      <div class="status-row">
+        <span class="status-label">审批状态：</span>
+        <el-tag :type="statusTagType(editEntry.status)" size="default">{{ statusLabel(editEntry.status) }}</el-tag>
+      </div>
+      <div v-if="editEntry.status === 'APPROVED' || editEntry.status === 'REJECTED'" class="status-row">
+        <span class="status-label">审批人：</span>
+        <span>{{ editEntry.approverName || '-' }}</span>
+      </div>
+      <div v-if="editEntry.status === 'REJECTED' && editEntry.blockerReason" class="status-row">
+        <span class="status-label">驳回原因：</span>
+        <span class="reject-reason">{{ editEntry.blockerReason }}</span>
+      </div>
+      <div v-if="editEntry.status !== 'DRAFT' && editEntry.updateDate" class="status-row">
+        <span class="status-label">审批时间：</span>
+        <span>{{ editEntry.updateDate }}</span>
+      </div>
+    </div>
+
     <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
       <el-form-item label="项目" prop="projectId">
-        <el-select v-model="form.projectId" filterable placeholder="请选择项目" style="width: 100%">
+        <el-select v-model="form.projectId" filterable placeholder="请选择项目" style="width: 100%" :disabled="isEdit && editEntry.status === 'APPROVED'">
           <el-option v-for="p in projects" :key="p.id" :label="p.projectName" :value="p.id" />
         </el-select>
       </el-form-item>
       <el-form-item label="工时" prop="hoursWorked">
-        <el-input-number v-model="form.hoursWorked" :min="0.5" :max="24" :step="0.5" placeholder="小时" />
+        <el-input-number v-model="form.hoursWorked" :min="0.5" :max="24" :step="0.5" placeholder="小时" :disabled="isEdit && editEntry.status === 'APPROVED'" />
       </el-form-item>
       <el-form-item label="描述" prop="workDescription">
-        <el-input v-model="form.workDescription" type="textarea" :rows="3" placeholder="工作内容描述" />
+        <el-input v-model="form.workDescription" type="textarea" :rows="3" placeholder="工作内容描述" :disabled="isEdit && editEntry.status === 'APPROVED'" />
       </el-form-item>
     </el-form>
 
-    <!-- Existing entries for this day -->
-    <div v-if="existingEntries.length > 0" class="existing-entries">
+    <!-- Existing entries for this day (only in create mode) -->
+    <div v-if="!isEdit && existingEntries.length > 0" class="existing-entries">
       <div class="existing-title">当日已录工时:</div>
       <div v-for="entry in existingEntries" :key="entry.id" class="existing-item" :class="'status-' + entry.status.toLowerCase()">
         <span class="existing-project">{{ entry.projectShortName }}: {{ entry.hoursWorked }}h</span>
@@ -34,8 +54,28 @@
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+      <!-- Create mode -->
+      <template v-if="!isEdit">
+        <el-button @click="visible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+      </template>
+      <!-- Edit mode: DRAFT -->
+      <template v-else-if="editEntry.status === 'DRAFT'">
+        <el-button @click="visible = false">取消</el-button>
+        <el-button type="danger" @click="handleDeleteCurrent">删除</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+      </template>
+      <!-- Edit mode: REJECTED -->
+      <template v-else-if="editEntry.status === 'REJECTED'">
+        <el-button @click="visible = false">取消</el-button>
+        <el-button type="danger" @click="handleDeleteCurrent">删除</el-button>
+        <el-button type="success" @click="handleResubmitCurrent">重新提交</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+      </template>
+      <!-- Edit mode: APPROVED -->
+      <template v-else>
+        <el-button @click="visible = false">关闭</el-button>
+      </template>
     </template>
   </el-dialog>
 </template>
@@ -86,6 +126,11 @@ const dailyTotal = computed(() => {
 const statusLabel = (status) => {
   const map = { DRAFT: '待审批', APPROVED: '已通过', REJECTED: '已驳回' }
   return map[status] || status
+}
+
+const statusTagType = (status) => {
+  const map = { DRAFT: 'warning', APPROVED: 'success', REJECTED: 'danger' }
+  return map[status] || 'info'
 }
 
 function open() {
@@ -158,7 +203,7 @@ async function loadProjects() {
 }
 
 async function loadExisting() {
-  if (!props.dateStr) return
+  if (!props.dateStr || isEdit.value) return
   try {
     const y = parseInt(props.dateStr.substring(0, 4))
     const m = parseInt(props.dateStr.substring(5, 7))
@@ -169,6 +214,27 @@ async function loadExisting() {
   }
 }
 
+async function handleDeleteCurrent() {
+  if (!props.editEntry?.id) return
+  try {
+    await ElMessageBox.confirm('确定删除此工时记录吗？', '提示', { type: 'warning' })
+    await deleteWorkHourApi(props.editEntry.id)
+    ElMessage.success('删除成功')
+    emit('delete')
+    visible.value = false
+  } catch (e) {
+    // Cancelled
+  }
+}
+
+async function handleResubmitCurrent() {
+  if (!props.editEntry?.id) return
+  await resubmitWorkHourApi(props.editEntry.id)
+  ElMessage.success('重新提交成功')
+  emit('resubmit')
+  visible.value = false
+}
+
 watch(() => visible.value, async (val) => {
   if (val) {
     await loadProjects()
@@ -177,7 +243,7 @@ watch(() => visible.value, async (val) => {
       form.value = {
         projectId: props.editEntry.projectId || '',
         hoursWorked: parseFloat(props.editEntry.hours) || 8,
-        workDescription: ''
+        workDescription: props.editEntry.workDescription || ''
       }
     } else {
       form.value = { projectId: '', hoursWorked: 8, workDescription: '' }
@@ -189,6 +255,25 @@ defineExpose({ open })
 </script>
 
 <style scoped>
+.status-info {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+}
+.status-label {
+  color: #909399;
+  min-width: 80px;
+}
+.reject-reason {
+  color: #f56c6c;
+}
 .existing-entries {
   margin-top: 16px;
   padding-top: 12px;

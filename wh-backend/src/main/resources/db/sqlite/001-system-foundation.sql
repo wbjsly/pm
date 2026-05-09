@@ -107,17 +107,17 @@ INSERT INTO sys_role (ID, ROLE_CODE, ROLE_NAME, DESCRIPTION, STATUS) VALUES
 
 -- Seed data: 10 users (password: Admin@123, BCrypt hash)
 -- BCrypt hash for Admin@123: $2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W
-INSERT INTO sys_user (ID, USERNAME, PASSWORD, NICK_NAME, REAL_NAME, STATUS) VALUES
-('user00000000000000000000000000001', 'admin', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '系统管理员', 'Admin', '1'),
-('user00000000000000000000000000002', 'pm_zhang', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '张经理', '张伟', '1'),
-('user00000000000000000000000000003', 'sponsor_li', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '李总', '李总', '1'),
-('user00000000000000000000000000004', 'ba_wang', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '王分析师', '王芳', '1'),
-('user00000000000000000000000000005', 'arch_chen', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '陈架构', '陈明', '1'),
-('user00000000000000000000000000006', 'qa_liu', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '刘质量', '刘静', '1'),
-('user00000000000000000000000000007', 'dev_zhao', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '赵开发', '赵强', '1'),
-('user00000000000000000000000000008', 'dev_sun', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '孙前端', '孙丽', '1'),
-('user00000000000000000000000000009', 'dev_zhou', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '周后端', '周杰', '1'),
-('user00000000000000000000000000010', 'impl_wu', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '吴实施', '吴刚', '1');
+INSERT INTO sys_user (ID, USERNAME, PASSWORD, NICK_NAME, REAL_NAME, EMAIL, PHONE, STATUS) VALUES
+('user00000000000000000000000000001', 'admin', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '系统管理员', 'Admin', 'admin@example.com', '13800000001', '1'),
+('user00000000000000000000000000002', 'pm_zhang', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '张经理', '张伟', 'pm_zhang@example.com', '13800000002', '1'),
+('user00000000000000000000000000003', 'sponsor_li', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '李总', '李总', 'sponsor_li@example.com', '13800000003', '1'),
+('user00000000000000000000000000004', 'ba_wang', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '王分析师', '王芳', 'ba_wang@example.com', '13800000004', '1'),
+('user00000000000000000000000000005', 'arch_chen', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '陈架构', '陈明', 'arch_chen@example.com', '13800000005', '1'),
+('user00000000000000000000000000006', 'qa_liu', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '刘质量', '刘静', 'qa_liu@example.com', '13800000006', '1'),
+('user00000000000000000000000000007', 'dev_zhao', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '赵开发', '赵强', 'dev_zhao@example.com', '13800000007', '1'),
+('user00000000000000000000000000008', 'dev_sun', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '孙前端', '孙丽', 'dev_sun@example.com', '13800000008', '1'),
+('user00000000000000000000000000009', 'dev_zhou', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '周后端', '周杰', 'dev_zhou@example.com', '13800000009', '1'),
+('user00000000000000000000000000010', 'impl_wu', '$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W', '吴实施', '吴刚', 'impl_wu@example.com', '13800000010', '1');
 
 -- Assign roles to users
 -- admin -> ROLE_ADMIN

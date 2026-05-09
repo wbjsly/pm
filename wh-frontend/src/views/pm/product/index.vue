@@ -7,9 +7,11 @@
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-input v-model="keyword" placeholder="产品编码/名称" clearable style="width: 180px" @keyup.enter="loadData" />
             <el-button type="primary" @click="loadData">查询</el-button>
-            <el-button type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon> 新增产品
-            </el-button>
+            <el-tooltip content="新增产品" placement="top">
+              <el-button type="primary" @click="handleAdd">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
         </div>
       </template>

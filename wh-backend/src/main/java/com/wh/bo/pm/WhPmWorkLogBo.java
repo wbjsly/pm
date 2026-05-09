@@ -107,6 +107,18 @@ public class WhPmWorkLogBo {
             if (realName != null) {
                 log.setCreateByName(realName);
             }
+            // Resolve approver name from updateBy
+            String updateBy = log.getUpdateBy();
+            if (updateBy != null && !"DRAFT".equals(log.getStatus())) {
+                if (!userCache.containsKey(updateBy)) {
+                    SysUser u = sysUserDao.selectById(updateBy);
+                    userCache.put(updateBy, u != null ? u.getRealName() : null);
+                }
+                String approverName = userCache.get(updateBy);
+                if (approverName != null) {
+                    log.setApproverName(approverName);
+                }
+            }
         }
     }
 

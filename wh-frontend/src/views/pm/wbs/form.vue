@@ -185,7 +185,7 @@ const loadDetail = async () => {
     techDifficulty: res.data.techDifficulty,
     effortEstimate: res.data.effortEstimate ? parseFloat(res.data.effortEstimate) : null,
     budgetEstimate: res.data.budgetEstimate ? parseFloat(res.data.budgetEstimate) : null,
-    plannedStartDate: res.data.latestPlannedEndDate,
+    plannedStartDate: res.data.plannedStartDate,
     plannedEndDate: res.data.latestPlannedEndDate,
     description: res.data.description
   })

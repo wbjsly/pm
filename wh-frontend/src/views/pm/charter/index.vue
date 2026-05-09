@@ -15,9 +15,11 @@
             <el-input v-model="queryParams.keyword" placeholder="项目名称/编号" clearable style="width: 180px" />
             <el-button type="primary" @click="loadData">查询</el-button>
             <el-button @click="resetQuery">重置</el-button>
-            <el-button type="primary" @click="$router.push('/pm/charter/form')">
-              <el-icon><Plus /></el-icon> 新增项目
-            </el-button>
+            <el-tooltip content="新增项目" placement="top">
+              <el-button type="primary" @click="$router.push('/pm/charter/form')">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
         </div>
       </template>
