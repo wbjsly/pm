@@ -8,40 +8,44 @@
         </div>
       </template>
 
-      <el-descriptions :column="4" border>
-        <el-descriptions-item label="章程编号">{{ detail.charterCode }}</el-descriptions-item>
-        <el-descriptions-item label="预算上限">{{ formatBudget(detail.budgetCap) }}</el-descriptions-item>
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="项目编号">{{ detail.projectCode }}</el-descriptions-item>
-        <el-descriptions-item label="项目简称">{{ detail.projectShortName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="项目名称">{{ detail.projectName }}<span v-if="detail.projectShortName" style="color: #909399;">（简称：{{ detail.projectShortName }}）</span></el-descriptions-item>
+        <el-descriptions-item label="项目经理">{{ detail.pmName || detail.pmId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="项目进度">
           <el-tag :type="progressTagType(detail.progress)">{{ progressLabel(detail.progress) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="审批状态">
-          <el-tag :type="statusTagType(detail.status)">{{ statusLabel(detail.status) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="项目分类">
           <el-tag v-if="detail.projectCategory" :type="categoryTagType(detail.projectCategory)">{{ categoryLabel(detail.projectCategory) }}</el-tag>
           <span v-else>-</span>
         </el-descriptions-item>
         <el-descriptions-item label="合同编号">{{ detail.contractNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="项目含税产值">{{ formatMoney(detail.outputValueTaxable) }}</el-descriptions-item>
-        <el-descriptions-item label="项目不含税产值">{{ formatMoney(detail.outputValueExcludingTax) }}</el-descriptions-item>
-        <el-descriptions-item label="税率">{{ detail.taxRate ? detail.taxRate + '%' : '-' }}</el-descriptions-item>
-        <el-descriptions-item label="税额">{{ formatMoney(detail.taxAmount) }}</el-descriptions-item>
-        <el-descriptions-item label="项目名称">{{ detail.projectName }}</el-descriptions-item>
-        <el-descriptions-item label="项目描述" :span="4">{{ detail.description }}</el-descriptions-item>
-        <el-descriptions-item label="项目目标" :span="4">{{ detail.objectives }}</el-descriptions-item>
-        <el-descriptions-item label="范围概述" :span="4">{{ detail.scopeSummary }}</el-descriptions-item>
-        <el-descriptions-item label="项目发起人">{{ detail.sponsorName || detail.sponsorId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="项目经理">{{ detail.pmName || detail.pmId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="计划开始日期">{{ detail.startDate }}</el-descriptions-item>
         <el-descriptions-item label="计划结束日期">{{ detail.endDate }}</el-descriptions-item>
-        <el-descriptions-item label="关键干系人" :span="4">{{ detail.keyStakeholders }}</el-descriptions-item>
-        <el-descriptions-item label="审批意见">{{ detail.approvalComment || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="备注" :span="4">{{ detail.remarks }}</el-descriptions-item>
       </el-descriptions>
 
       <el-tabs v-model="activeTab" style="margin-top: 20px;" @tab-click="handleTabClick">
+        <el-tab-pane label="项目信息" name="projectInfo">
+          <el-descriptions :column="4" border>
+            <el-descriptions-item label="章程编号">{{ detail.charterCode }}</el-descriptions-item>
+            <el-descriptions-item label="项目发起人">{{ detail.sponsorName || detail.sponsorId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="预算上限">{{ formatBudget(detail.budgetCap) }}</el-descriptions-item>
+            <el-descriptions-item label="审批状态">
+              <el-tag :type="statusTagType(detail.status)">{{ statusLabel(detail.status) }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="项目含税产值">{{ formatMoney(detail.outputValueTaxable) }}</el-descriptions-item>
+            <el-descriptions-item label="项目不含税产值">{{ formatMoney(detail.outputValueExcludingTax) }}</el-descriptions-item>
+            <el-descriptions-item label="税率">{{ detail.taxRate ? detail.taxRate + '%' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="税额">{{ formatMoney(detail.taxAmount) }}</el-descriptions-item>
+            <el-descriptions-item label="项目描述" :span="4">{{ detail.description }}</el-descriptions-item>
+            <el-descriptions-item label="项目目标" :span="4">{{ formatObjectives(detail.objectives) }}</el-descriptions-item>
+            <el-descriptions-item label="范围概述" :span="4">{{ detail.scopeSummary }}</el-descriptions-item>
+            <el-descriptions-item label="关键干系人" :span="4">{{ formatStakeholders(detail.keyStakeholders) }}</el-descriptions-item>
+            <el-descriptions-item label="审批意见" :span="4">{{ detail.approvalComment || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="备注" :span="4">{{ detail.remarks }}</el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
+
         <el-tab-pane label="项目预算" name="budget">
           <el-table :data="budgetData" v-loading="tabLoading.budget" stripe size="small">
             <el-table-column prop="budgetCode" label="预算编码" width="180" />
@@ -137,7 +141,7 @@ const route = useRoute()
 const router = useRouter()
 const detail = ref({})
 const loading = ref(false)
-const activeTab = ref('budget')
+const activeTab = ref('projectInfo')
 const chartRef = ref(null)
 let chartInstance = null
 let resizeHandler = null
@@ -341,10 +345,8 @@ const handleTabClick = async ({ paneName }) => {
   }
 }
 
-// Auto-load budget (default tab) on mount
 onMounted(() => {
   loadDetail()
-  loadBudget()
 })
 
 const formatBudget = (val) => {
@@ -378,6 +380,24 @@ const statusLabel = (status) => {
   return map[status] || status
 }
 
+const formatObjectives = (val) => {
+  if (!val) return '-'
+  try {
+    const arr = JSON.parse(val)
+    if (!Array.isArray(arr) || !arr.length) return '-'
+    return arr.map(o => `${o.objective || ''}-${o.metric || ''}:${o.target || ''}`).join(', ')
+  } catch { return val }
+}
+
+const formatStakeholders = (val) => {
+  if (!val) return '-'
+  try {
+    const arr = JSON.parse(val)
+    if (!Array.isArray(arr) || !arr.length) return '-'
+    return arr.map(s => `${s.name || ''}:${s.org || ''}-${s.role || ''}`).join(', ')
+  } catch { return val }
+}
+
 const progressTagType = (progress) => {
   const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
   return map[progress] || 'info'
@@ -402,7 +422,6 @@ const loadDetail = async () => {
 
 onActivated(() => {
   loadDetail()
-  if (activeTab.value === 'budget') loadBudget()
 })
 
 // When project changes, reset all tab caches and reload active tab
@@ -416,7 +435,6 @@ watch(() => route.params.id, (newId, oldId) => {
   deliverableData.value = []
   Object.keys(loadedTabs).forEach(k => loadedTabs[k] = false)
   loadDetail()
-  loadBudget()
 })
 
 onBeforeUnmount(() => {
