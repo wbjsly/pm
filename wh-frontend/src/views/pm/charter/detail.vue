@@ -426,6 +426,7 @@ onActivated(() => {
 
 // When project changes, reset all tab caches and reload active tab
 watch(() => route.params.id, (newId, oldId) => {
+  if (!route.path.startsWith('/pm/charter/detail')) return
   if (!newId || newId === oldId) return
   if (chartInstance) { chartInstance.dispose(); chartInstance = null }
   if (resizeHandler) { window.removeEventListener('resize', resizeHandler); resizeHandler = null }
