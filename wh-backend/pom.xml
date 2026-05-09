@@ -55,12 +55,6 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!-- H2 (Flowable database) -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
-
         <!-- SQLite -->
         <dependency>
             <groupId>org.xerial</groupId>

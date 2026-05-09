@@ -1,6 +1,7 @@
 package com.wh.bootstrap;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -12,16 +13,17 @@ import org.springframework.stereotype.Component;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class SqliteBootstrap implements ApplicationRunner {
+public class SqliteBootstrap implements InitializingBean, ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Value("${app.sqlite.bootstrap.enabled:true}")
     private boolean bootstrapEnabled;
@@ -37,7 +39,20 @@ public class SqliteBootstrap implements ApplicationRunner {
     }
 
     @Override
+    public void afterPropertiesSet() {
+        runMigrations();
+    }
+
+    @Override
     public void run(ApplicationArguments args) {
+        runMigrations();
+    }
+
+    private void runMigrations() {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+
         if (!bootstrapEnabled) {
             log.info("SQLite Bootstrap is disabled.");
             return;

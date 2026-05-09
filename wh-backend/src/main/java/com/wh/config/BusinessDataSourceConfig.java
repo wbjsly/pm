@@ -10,8 +10,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 
 /**
- * Primary SQLite DataSource for business data (MyBatis Plus, JdbcTemplate).
- * Flowable uses a separate H2 in-memory DataSource defined in FlowableConfig.
+ * Primary SQLite DataSource for business data (MyBatis Plus, JdbcTemplate) and Flowable.
  */
 @Configuration
 public class BusinessDataSourceConfig {

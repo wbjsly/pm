@@ -1,6 +1,5 @@
 package com.wh;
 
-import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.FlowableSecurityAutoConfiguration;
@@ -27,7 +26,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(exclude = {
-        DruidDataSourceAutoConfigure.class,
         FlowableSecurityAutoConfiguration.class
 })
 @EnableAutoConfiguration(exclude = {

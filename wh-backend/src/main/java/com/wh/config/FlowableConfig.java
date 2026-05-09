@@ -1,45 +1,57 @@
 package com.wh.config;
 
+import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.type.JdbcType;
 import org.flowable.engine.*;
 import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 
 import javax.sql.DataSource;
+import java.util.Date;
 
 /**
- * Flowable uses H2 in-memory database since it doesn't support SQLite natively.
- * Business data stays in SQLite; Flowable tables live in H2 (in-memory, zero persistence).
+ * Flowable shares the same SQLite database as business data.
+ * Uses H2 dialect (closest to SQLite) with strong UUIDs to avoid sequence dependencies.
+ * Custom initMybatisTypeHandlers registers SQLite-compatible TypeHandlers before XML parsing.
  */
-@Configuration
+@org.springframework.context.annotation.Configuration
 public class FlowableConfig {
 
-    @Bean("flowableDataSource")
-    public DataSource flowableDataSource() {
-        org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:flowable;DB_CLOSE_DELAY=-1;MODE=Regular");
-        ds.setUser("sa");
-        ds.setPassword("");
-        return ds;
+    /**
+     * Custom ProcessEngineConfiguration that registers SQLite-compatible MyBatis TypeHandlers
+     * during initMybatisTypeHandlers, which is called BEFORE XML mapper parsing.
+     */
+    static class SqliteProcessEngineConfiguration extends StandaloneProcessEngineConfiguration {
+        @Override
+        public void initMybatisTypeHandlers(Configuration configuration) {
+            super.initMybatisTypeHandlers(configuration);
+            configuration.getTypeHandlerRegistry()
+                    .register(Date.class, new SqliteDateTypeHandler());
+            configuration.getTypeHandlerRegistry()
+                    .register(byte[].class, JdbcType.BLOB, new SqliteBlobTypeHandler());
+        }
     }
 
     @Bean
-    @DependsOn("flowableDataSource")
+    @DependsOn({"dataSource", "sqliteBootstrap"})
     public ProcessEngineConfiguration processEngineConfiguration(
-            @org.springframework.beans.factory.annotation.Qualifier("flowableDataSource") DataSource flowableDS) {
-        StandaloneProcessEngineConfiguration config = new StandaloneProcessEngineConfiguration();
-        config.setDataSource(flowableDS);
-        config.setDatabaseSchemaUpdate("true");
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource) {
+        SqliteProcessEngineConfiguration config = new SqliteProcessEngineConfiguration();
+        config.setDataSource(dataSource);
+        config.setDatabaseType("h2");
+        config.setIdGenerator(new UuidIdGenerator());
+        config.setDatabaseSchemaUpdate("false");
         config.setAsyncExecutorActivate(false);
         config.setDisableIdmEngine(true);
+        config.setDisableEventRegistry(true);
         return config;
     }
 
     @Bean
     public ProcessEngine processEngine(ProcessEngineConfiguration processEngineConfiguration) {
         ProcessEngine engine = processEngineConfiguration.buildProcessEngine();
-        // Deploy BPMN files
+
         engine.getRepositoryService()
                 .createDeployment()
                 .addClasspathResource("bpmn/pm-charter-approval.bpmn20.xml")
@@ -54,6 +66,11 @@ public class FlowableConfig {
                 .createDeployment()
                 .addClasspathResource("bpmn/pm-wbs-modify-approval.bpmn20.xml")
                 .name("pm-wbs-modify-approval")
+                .deploy();
+        engine.getRepositoryService()
+                .createDeployment()
+                .addClasspathResource("bpmn/pm-deliverable-approval.bpmn20.xml")
+                .name("pm-deliverable-approval")
                 .deploy();
         return engine;
     }
