@@ -26,7 +26,7 @@
           <el-icon style="transition: transform 0.2s; margin-right: 12px;" :style="{ transform: expandedProjectId === project.id ? 'rotate(90deg)' : '' }">
             <ArrowRight />
           </el-icon>
-          <span style="font-weight: bold; margin-right: 24px; font-size: 12px;">{{ project.projectName }}</span>
+          <span style="font-weight: bold; margin-right: 24px; font-size: 12px;">{{ project.projectName }}<template v-if="project.projectShortName">（{{ project.projectShortName }}）</template></span>
           <el-tag size="small">{{ project.charterCode }}</el-tag>
           <el-tag size="small" :type="progressTagType(project.progress)" style="margin-left: 16px;">{{ progressLabel(project.progress) }}</el-tag>
           <span v-if="project.pmName" style="margin-left: 24px; color: #666; font-size: 12px;">PM: {{ project.pmName }}</span>
