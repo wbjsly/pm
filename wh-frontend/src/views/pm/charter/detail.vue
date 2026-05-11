@@ -149,7 +149,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="项目实际成本" name="actualCost">
+        <el-tab-pane label="项目成本" name="actualCost">
           <div v-loading="tabLoading.actualCost">
             <div ref="actualCostChartRef" style="width: 100%; height: 400px;"></div>
 
@@ -247,7 +247,7 @@
           <div ref="chartRef" style="width: 100%; height: 400px;" v-loading="tabLoading.workHours"></div>
         </el-tab-pane>
 
-        <el-tab-pane label="项目成果物" name="deliverables">
+        <el-tab-pane label="项目成果" name="deliverables">
           <el-table :data="deliverableData" v-loading="tabLoading.deliverables" stripe size="small">
             <el-table-column prop="deliverableCode" label="编号" width="200" />
             <el-table-column prop="name" label="名称" min-width="160" />

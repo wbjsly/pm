@@ -84,7 +84,7 @@ const routes = [
         path: '/pm/deliverable',
         name: 'DeliverableList',
         component: () => import('@/views/pm/deliverable/index.vue'),
-        meta: { title: '成果物管理', group: '项目管理', perm: 'ROLE_PM,ROLE_SPONSOR' }
+        meta: { title: '成果管理', group: '项目管理', perm: 'ROLE_PM,ROLE_SPONSOR' }
       },
       {
         path: '/pm/deliverable/detail/:id',
@@ -157,7 +157,7 @@ const routes = [
         path: '/system/cost-quota',
         name: 'CostQuota',
         component: () => import('@/views/system/cost-quota/index.vue'),
-        meta: { title: '交付成本定额', group: '系统管理', perm: 'ROLE_ADMIN,ROLE_PM' }
+        meta: { title: '成本定额', group: '系统管理', perm: 'ROLE_ADMIN,ROLE_PM' }
       },
       {
         path: '/system/user',

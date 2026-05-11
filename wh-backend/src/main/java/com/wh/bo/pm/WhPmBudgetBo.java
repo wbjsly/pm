@@ -83,6 +83,7 @@ public class WhPmBudgetBo {
         wrapper.orderByDesc(WhPmBudget::getCreateDate);
         IPage<WhPmBudget> result = budgetDao.selectPage(page, wrapper);
         fillUserNames(result.getRecords());
+        fillActualCosts(result.getRecords());
 
         // Filter by PM if needed (after loading charters)
         if (pmId != null && !pmId.isEmpty()) {
@@ -600,6 +601,30 @@ public class WhPmBudgetBo {
                     b.setPmName(pmNameMap.get(charter.getPmId()));
                 }
             }
+        }
+    }
+
+    private void fillActualCosts(List<WhPmBudget> budgets) {
+        for (WhPmBudget b : budgets) {
+            if (b.getProjectId() == null) continue;
+            Double cost = actualCostDao.sumAmountByProjectId(b.getProjectId());
+            double actualCost = cost != null ? cost : 0.0;
+            b.setActualCost(actualCost);
+            double costBaseline = parseDouble(b.getCostBaseline());
+            b.setBudgetRemaining(costBaseline - actualCost);
+            if (costBaseline > 0) {
+                b.setCostRatio(actualCost / costBaseline);
+            } else {
+                b.setCostRatio(0.0);
+            }
+        }
+    }
+
+    private double parseDouble(String val) {
+        try {
+            return val != null ? Double.parseDouble(val) : 0.0;
+        } catch (NumberFormatException e) {
+            return 0.0;
         }
     }
 

@@ -56,19 +56,19 @@
 
         <!-- Comparison Table -->
         <el-table :data="flatItems" border stripe row-key="id">
-          <el-table-column prop="name" label="预算科目" min-width="150" />
-          <el-table-column label="层级" width="80">
+          <el-table-column prop="name" label="预算科目" min-width="160" />
+          <el-table-column label="层级" width="160">
             <template #default="{ row }">
               <el-tag size="small" :type="row.level === 1 ? '' : 'info'">{{ row.level === 1 ? '一级' : '二级' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="项目直接预算" width="140" align="right">
+          <el-table-column label="项目直接预算" width="160" align="right">
             <template #default="{ row }"><span class="amount-cell">¥ {{ formatAmount(row.budgetAmount) }}</span></template>
           </el-table-column>
-          <el-table-column label="实际金额" width="140" align="right">
+          <el-table-column label="实际金额" width="160" align="right">
             <template #default="{ row }"><span class="amount-cell">¥ {{ formatAmount(row.actualAmount) }}</span></template>
           </el-table-column>
-          <el-table-column label="剩余预算" width="140" align="right">
+          <el-table-column label="剩余预算" width="160" align="right">
             <template #default="{ row }">
               <span class="amount-cell" :style="{ color: row.remaining < 0 ? '#f56c6c' : '' }">
                 ¥ {{ formatAmount(row.remaining) }}
@@ -82,7 +82,7 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="详情" width="80" v-if="hasDetail">
+          <el-table-column label="详情" width="70" v-if="hasDetail">
             <template #default="{ row }">
               <el-button link type="primary" size="small" @click="showDetail(row)" v-if="row.level === 2">查看</el-button>
             </template>

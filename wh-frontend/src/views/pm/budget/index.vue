@@ -31,30 +31,39 @@
       <!-- Table -->
       <el-table :data="tableData" v-loading="loading" :key="tableKey" stripe>
         <el-table-column prop="budgetCode" label="预算编码" width="180" />
-        <el-table-column prop="projectName" label="项目名称" min-width="180" />
-        <el-table-column prop="projectShortName" label="项目简称" width="120">
+        <el-table-column label="项目名称" min-width="200">
           <template #default="{ row }">
-            <span v-if="row.projectShortName">{{ row.projectShortName }}</span>
-            <span v-else style="color: #999;">-</span>
+            <span>{{ row.projectName }}</span>
+            <span v-if="row.projectShortName" style="color: #909399;">（{{ row.projectShortName }}）</span>
           </template>
         </el-table-column>
         <el-table-column prop="pmName" label="项目经理" width="120" />
         <el-table-column prop="version" label="版本号" width="80" />
-        <el-table-column prop="totalBudgetDisplay" label="总预算(元)" width="140">
-          <template #default="{ row }">{{ formatMoney(row.totalBudget) }}</template>
-        </el-table-column>
-        <el-table-column prop="projectDirectBudget" label="项目直接预算(元)" width="140">
+        <el-table-column prop="projectDirectBudget" label="项目直接预算(元)" width="150">
           <template #default="{ row }">{{ formatMoney(row.costBaseline) }}</template>
         </el-table-column>
-        <el-table-column prop="projectManagementBudget" label="项目管理预算(元)" width="140">
-          <template #default="{ row }">{{ formatMoney(row.managementReserve) }}</template>
+        <el-table-column prop="actualCost" label="项目成本(元)" width="150">
+          <template #default="{ row }">{{ formatMoney(row.actualCost) }}</template>
+        </el-table-column>
+        <el-table-column prop="budgetRemaining" label="预算余额(元)" width="150">
+          <template #default="{ row }">
+            <span :style="{ color: (row.budgetRemaining ?? 0) < 0 ? '#f56c6c' : '' }">
+              {{ formatMoney(row.budgetRemaining) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="costRatio" label="预算投入比例" width="120">
+          <template #default="{ row }">
+            <span :style="{ color: (row.costRatio ?? 0) > 1 ? '#f56c6c' : (row.costRatio ?? 0) > 0.9 ? '#e6a23c' : '' }">
+              {{ formatPercent(row.costRatio) }}
+            </span>
+          </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createByName" label="创建人" width="100" />
         <el-table-column prop="createDate" label="创建日期" width="120">
           <template #default="{ row }">
             {{ formatDate(row.createDate) }}
@@ -131,6 +140,12 @@ const formatMoney = (val) => {
   const num = parseFloat(val) || 0
   if (num === 0) return '-'
   return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const formatPercent = (val) => {
+  const num = parseFloat(val) || 0
+  if (num === 0) return '-'
+  return (num * 100).toFixed(1) + '%'
 }
 
 const statusLabel = (status) => {

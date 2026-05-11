@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span class="card-title">交付成本定额</span>
+          <span class="card-title">成本定额</span>
           <div class="header-actions">
             <el-select
               v-model="selectedYearId"
@@ -31,8 +31,8 @@
       <div v-loading="loading">
         <el-empty v-if="!selectedYearId" description="请先选择或创建年份" />
         <el-table v-else :data="quotaList" stripe row-key="positionId">
-          <el-table-column prop="positionName" label="岗位名称" width="100" />
-          <el-table-column label="交付成本定额(元/人天)" width="200" align="right">
+          <el-table-column prop="positionName" label="岗位名称" min-width="120" />
+          <el-table-column label="成本定额(元/人天)" width="220" align="right">
             <template #default="{ row }">
               <span class="amount-cell" v-if="row.dailyRate">
                 ¥ {{ formatMoney(row.dailyRate) }}
@@ -40,18 +40,18 @@
               <el-tag v-else type="info" size="small">未设置</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="版本号" width="100" align="center">
+          <el-table-column label="版本号" width="220" align="center">
             <template #default="{ row }">
               <span v-if="row.versionNo">v{{ row.versionNo }}</span>
               <span v-else style="color: #999;">-</span>
             </template>
           </el-table-column>
-          <el-table-column label="最近更新时间" width="180">
+          <el-table-column label="最近更新时间" width="220">
             <template #default="{ row }">
               {{ row.updateDate ? row.updateDate.substring(0, 19) : '-' }}
             </template>
           </el-table-column>
-          <el-table-column label="生效日期" width="140">
+          <el-table-column label="生效日期" width="220">
             <template #default="{ row }">
               {{ row.effectiveDate || '-' }}
             </template>
@@ -116,7 +116,7 @@
     </el-dialog>
 
     <!-- 历史版本抽屉 -->
-    <el-drawer v-model="historyVisible" title="历史版本" size="640px">
+    <el-drawer v-model="historyVisible" title="历史版本" size="850px">
       <div v-loading="historyLoading">
         <el-table :data="historyList" stripe size="small">
           <el-table-column label="版本" width="80" align="center">
@@ -199,7 +199,7 @@
     <el-dialog v-model="showPositionDialog" title="岗位管理" width="560px" @opened="loadPositions">
       <div class="dialog-actions">
         <el-tooltip content="新增岗位" placement="top">
-          <el-button type="primary" circle @click="openPositionForm()">
+          <el-button type="primary" @click="openPositionForm()">
             <el-icon><Plus /></el-icon>
           </el-button>
         </el-tooltip>

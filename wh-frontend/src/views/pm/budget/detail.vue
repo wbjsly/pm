@@ -134,7 +134,7 @@
             <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
               <div class="other-cat-item">
                 <label class="other-cat-label">{{ cat.label }}</label>
-                <span class="other-cat-value">{{ formatMoney(getOtherAmount(cat.value)) }}</span>
+                <span class="other-cat-value">¥ {{ formatMoney(getOtherAmount(cat.value)) }}</span>
               </div>
               <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
             </template>
@@ -337,9 +337,8 @@ watch(() => route.params.id, () => {
 }
 .other-cat-value {
   display: block;
-  font-size: 14px;
-  color: #409eff;
-  font-weight: bold;
+  font-size: 12px;
+  color: #303133;
 }
 .other-plus-operator {
   font-size: 18px;

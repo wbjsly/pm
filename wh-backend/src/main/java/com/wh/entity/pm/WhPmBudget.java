@@ -52,4 +52,13 @@ public class WhPmBudget extends BaseEntity {
 
     @TableField(exist = false)
     private String projectShortName;
+
+    @TableField(exist = false)
+    private Double actualCost;
+
+    @TableField(exist = false)
+    private Double budgetRemaining;
+
+    @TableField(exist = false)
+    private Double costRatio;
 }

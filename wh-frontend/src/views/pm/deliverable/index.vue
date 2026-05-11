@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <span style="font-weight: bold; font-size: 16px;">成果物管理</span>
+          <span style="font-weight: bold; font-size: 16px;">成果管理</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-select v-model="progressFilter" multiple collapse-tags collapse-tags-tooltip placeholder="项目进度" clearable style="width: 180px">
               <el-option label="进行中" value="IN_PROGRESS" />
@@ -48,7 +48,7 @@
           <el-table :data="deliverableData" row-key="id" v-loading="loading" stripe>
             <el-table-column prop="deliverableCode" label="成果物编号" width="220" />
             <el-table-column prop="name" label="名称" min-width="140" />
-            <el-table-column label="附件" width="80" align="center">
+            <el-table-column label="附件数量" width="80" align="center">
               <template #default="{ row }">
                 <el-popover
                   v-if="getAttachments(row).length > 0"

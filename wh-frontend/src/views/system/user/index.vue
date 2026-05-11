@@ -21,18 +21,18 @@
 
       <!-- Table -->
       <el-table :data="tableData" :key="tableKey" row-key="id" v-loading="loading" stripe>
-        <el-table-column prop="username" label="账号" width="130" />
-        <el-table-column prop="nickName" label="昵称" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
-        <el-table-column prop="email" label="邮箱" width="180" />
-        <el-table-column prop="phone" label="手机" width="140" />
-        <el-table-column prop="positionName" label="成本岗位" width="120" />
-        <el-table-column label="角色" width="160">
+        <el-table-column prop="username" label="账号" min-width="130" />
+        <el-table-column prop="nickName" label="昵称" min-width="120" />
+        <el-table-column prop="realName" label="真实姓名" min-width="120" />
+        <el-table-column prop="email" label="邮箱" width="220" />
+        <el-table-column prop="phone" label="手机" width="220" />
+        <el-table-column prop="positionName" label="成本岗位" min-width="120" />
+        <el-table-column label="角色" min-width="160">
           <template #default="{ row }">
             <el-tag v-for="role in row.roles" :key="role" size="small" style="margin-right: 4px">{{ roleMap[role] || role }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === '1' ? 'success' : 'danger'" size="small">{{ row.status === '1' ? '启用' : '禁用' }}</el-tag>
           </template>
