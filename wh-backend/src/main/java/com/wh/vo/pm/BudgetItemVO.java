@@ -25,6 +25,10 @@ public class BudgetItemVO {
     // Labor detail
     private String roleCode;
 
+    private String positionId;
+
+    private String positionName;
+
     private String hours;
 
     private BigDecimal costRate;

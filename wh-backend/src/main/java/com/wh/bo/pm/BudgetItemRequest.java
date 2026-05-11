@@ -23,6 +23,8 @@ public class BudgetItemRequest {
     // Labor detail
     private String roleCode;
 
+    private String positionId;
+
     private String hours;
 
     private String costRate;

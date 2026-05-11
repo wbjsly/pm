@@ -30,12 +30,9 @@
           <el-table :data="form.items.LABOR" style="width: 100%" size="small">
             <el-table-column label="岗位" width="160">
               <template #default="{ row }">
-                <el-select v-model="row.roleCode" size="small">
-                  <el-option label="开发(DEV)" value="DEV" />
-                  <el-option label="测试(QA)" value="QA" />
-                  <el-option label="产品经理(BA)" value="BA" />
-                  <el-option label="架构师(ARCH)" value="ARCH" />
-                  <el-option label="项目经理(PM)" value="PM" />
+                <el-select v-model="row.positionId" size="small" filterable placeholder="请选择岗位"
+                  @change="handlePositionChange(row)">
+                  <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
                 </el-select>
               </template>
             </el-table-column>
@@ -51,9 +48,8 @@
             </el-table-column>
             <el-table-column label="成本定额(元/时)" width="180">
               <template #default="{ row }">
-                <el-input-number v-model="row.costRate" :min="0" :precision="2" size="small" @change="calcLaborAmount(row)"
-                  :formatter="(value) => value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                  :parser="(value) => value.replace(/,/g, '')"
+                <el-input-number v-model="row.costRate" :min="0" :precision="2" size="small" disabled
+                  :class="{ 'zero-rate': row.costRate === 0 }"
                 />
               </template>
             </el-table-column>
@@ -183,6 +179,23 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
         <el-button @click="$router.back()">返回</el-button>
       </div>
+
+      <!-- Quota change confirmation dialog -->
+      <el-dialog v-model="quotaDialogVisible" title="定额变更确认" width="480px">
+        <div style="margin-bottom: 12px;">该岗位的交付成本定额已更新，请选择：</div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="原定额(元/时)">{{ quotaDialogOldRate.toFixed(2) }}</el-descriptions-item>
+          <el-descriptions-item label="新定额(元/时)">
+            <span :style="{ color: quotaDialogNewRate === 0 ? '#f56c6c' : '#67c23a', fontWeight: 'bold' }">
+              {{ quotaDialogNewRate.toFixed(2) }}
+            </span>
+          </el-descriptions-item>
+        </el-descriptions>
+        <template #footer>
+          <el-button @click="onQuotaDialogConfirm('old')">保留原值</el-button>
+          <el-button type="primary" @click="onQuotaDialogConfirm('new')">使用新定额</el-button>
+        </template>
+      </el-dialog>
     </el-card>
   </div>
 </template>
@@ -194,14 +207,22 @@ import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getBudgetDetailApi, getBudgetDetailWithItemsApi, createBudgetApi, updateBudgetApi, getBudgetListApi } from '@/api/pm/budget'
 import { getCharterListApi } from '@/api/pm/charter'
+import { getPositionListApi, getCurrentRateApi } from '@/api/system/costQuota'
 
 const route = useRoute()
 const router = useRouter()
 const formRef = ref(null)
 const submitting = ref(false)
 const projects = ref([])
+const positionList = ref([])
 
 const isEdit = computed(() => !!route.params.id)
+
+// Per-row quota confirmation dialog
+const quotaDialogVisible = ref(false)
+const quotaDialogNewRate = ref(0)
+const quotaDialogOldRate = ref(0)
+const quotaDialogCallback = ref(null) // resolve function
 
 const otherCategoryList = [
   { label: '差旅', value: 'TRAVEL' },
@@ -216,7 +237,7 @@ const form = ref({
   projectId: '',
   managementReserve: 0,
   items: {
-    LABOR: [{ roleCode: 'DEV', hours: 0, costRate: 0, amount: 0 }],
+    LABOR: [{ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 }],
     PROCUREMENT: [{ bomItem: '', qty: 0, unitPrice: 0, amount: 0 }],
     TRAVEL: [{ amount: 0 }],
     BUSINESS: [{ amount: 0 }],
@@ -266,6 +287,65 @@ const calcLaborAmount = (row) => {
   row.amount = (row.hours || 0) * (row.costRate || 0)
 }
 
+const loadPositions = async () => {
+  try {
+    const res = await getPositionListApi()
+    positionList.value = res.data || []
+  } catch { /* ignore */ }
+}
+
+const handlePositionChange = async (row) => {
+  if (!row.positionId) {
+    row.roleCode = ''
+    row.costRate = 0
+    calcLaborAmount(row)
+    return
+  }
+
+  try {
+    const res = await getCurrentRateApi(row.positionId)
+    const data = res.data
+    let newRate = 0
+    if (data && data.costRate !== undefined && data.costRate !== null) {
+      newRate = parseFloat(data.costRate)
+    }
+
+    // In edit mode, compare with saved rate and show confirmation dialog
+    if (isEdit.value && row._savedCostRate !== undefined && newRate !== row._savedCostRate) {
+      quotaDialogOldRate.value = row._savedCostRate
+      quotaDialogNewRate.value = newRate
+      quotaDialogVisible.value = true
+
+      const userChoice = await new Promise(resolve => { quotaDialogCallback.value = resolve })
+      if (userChoice === 'new') {
+        row.costRate = newRate
+        row._savedCostRate = newRate
+      }
+      // else: keep original (don't change row.costRate)
+    } else {
+      row.costRate = newRate
+    }
+
+    // Update roleCode from position for backward compat
+    const pos = positionList.value.find(p => p.id === row.positionId)
+    if (pos) {
+      row.roleCode = pos.name || ''
+    }
+    calcLaborAmount(row)
+  } catch {
+    row.costRate = 0
+    calcLaborAmount(row)
+  }
+}
+
+const onQuotaDialogConfirm = (choice) => {
+  quotaDialogVisible.value = false
+  if (quotaDialogCallback.value) {
+    quotaDialogCallback.value(choice)
+    quotaDialogCallback.value = null
+  }
+}
+
 const calcProcurementAmount = (row) => {
   row.amount = (row.qty || 0) * (row.unitPrice || 0)
 }
@@ -276,7 +356,7 @@ const calcTotals = () => {
 
 const addItem = (category) => {
   if (category === 'LABOR') {
-    form.value.items.LABOR.push({ roleCode: 'DEV', hours: 0, costRate: 0, amount: 0 })
+    form.value.items.LABOR.push({ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 })
   } else if (category === 'PROCUREMENT') {
     form.value.items.PROCUREMENT.push({ bomItem: '', qty: 0, unitPrice: 0, amount: 0 })
   }
@@ -293,7 +373,7 @@ const resetForm = () => {
     projectId: '',
     managementReserve: 0,
     items: {
-      LABOR: [{ roleCode: 'DEV', hours: 0, costRate: 0, amount: 0 }],
+      LABOR: [{ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 }],
       PROCUREMENT: [{ bomItem: '', qty: 0, unitPrice: 0, amount: 0 }],
       TRAVEL: [{ amount: 0 }],
       BUSINESS: [{ amount: 0 }],
@@ -345,6 +425,7 @@ const buildItemsTree = () => {
         amount: (item.amount || 0).toString(),
         level: 1,
         roleCode: item.roleCode,
+        positionId: item.positionId,
         hours: item.hours?.toString(),
         costRate: item.costRate?.toString(),
         bomItem: item.bomItem,
@@ -406,9 +487,11 @@ const loadData = async () => {
       if (laborItems.length > 0) {
         form.value.items.LABOR = laborItems.map(i => ({
           roleCode: i.roleCode || 'DEV',
+          positionId: i.positionId || '',
           hours: parseFloat(i.hours) || 0,
           costRate: parseFloat(i.costRate) || 0,
-          amount: parseFloat(i.budgetAmount) || 0
+          amount: parseFloat(i.budgetAmount) || 0,
+          _savedCostRate: parseFloat(i.costRate) || 0
         }))
       }
       if (procurementItems.length > 0) {
@@ -432,12 +515,12 @@ const loadData = async () => {
 }
 
 onMounted(async () => {
-  await loadProjects()
+  await Promise.all([loadProjects(), loadPositions()])
   loadData()
 })
 
 onActivated(async () => {
-  await loadProjects()
+  await Promise.all([loadProjects(), loadPositions()])
   if (!isEdit.value) {
     resetForm()
   } else {
@@ -549,5 +632,9 @@ watch(() => route.params.id, (newId) => {
   font-weight: bold;
   color: #909399;
   font-size: 16px;
+}
+:deep(.zero-rate .el-input__inner) {
+  color: #f56c6c;
+  font-weight: bold;
 }
 </style>

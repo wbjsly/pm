@@ -8,6 +8,9 @@ import com.wh.entity.pm.WhPmActualCost;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/pm/actual-costs")
@@ -25,8 +28,22 @@ public class WhPmActualCostController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String projectId,
             @RequestParam(required = false) String budgetItemId,
-            @RequestParam(required = false) String sourceSystem) {
-        return R.ok(actualCostBo.pageList(pageNum, pageSize, projectId, budgetItemId, sourceSystem));
+            @RequestParam(required = false) String sourceSystem,
+            @RequestParam(required = false) String costTypes,
+            @RequestParam(required = false) String yearMonth) {
+        return R.ok(actualCostBo.pageList(pageNum, pageSize, projectId, budgetItemId, sourceSystem, costTypes, yearMonth));
+    }
+
+    @GetMapping("/aggregation")
+    public R<List<Map<String, Object>>> aggregation(@RequestParam String projectId) {
+        return R.ok(actualCostBo.getMonthlyAggregation(projectId));
+    }
+
+    @GetMapping("/sum")
+    public R<Double> sum(@RequestParam String projectId,
+                         @RequestParam(required = false) String costTypes,
+                         @RequestParam(required = false) String yearMonth) {
+        return R.ok(actualCostBo.getSumByFilter(projectId, yearMonth, costTypes));
     }
 
     @GetMapping("/{id}")

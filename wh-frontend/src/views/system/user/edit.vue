@@ -35,6 +35,11 @@
             <el-option v-for="role in allRoles" :key="role.id" :label="role.roleName" :value="role.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="成本岗位" prop="positionId">
+          <el-select v-model="form.positionId" filterable placeholder="请选择成本岗位" style="width: 100%">
+            <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
           <el-button @click="handleBack">取消</el-button>
@@ -48,6 +53,7 @@
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getUserDetailApi, updateUserApi } from '@/api/system/user'
+import { getPositionListApi } from '@/api/system/costQuota'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
@@ -57,6 +63,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
 const allRoles = ref([])
+const positionList = ref([])
 
 const form = reactive({
   username: '',
@@ -65,7 +72,8 @@ const form = reactive({
   email: '',
   phone: '',
   status: '1',
-  roleIds: []
+  roleIds: [],
+  positionId: ''
 })
 
 const rules = {
@@ -75,15 +83,19 @@ const rules = {
   ],
   phone: [
     { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' }
+  ],
+  positionId: [
+    { required: true, message: '请选择成本岗位', trigger: 'change' }
   ]
 }
 
 const loadUserData = async () => {
   loading.value = true
   try {
-    const [userRes, rolesRes] = await Promise.all([
+    const [userRes, rolesRes, posRes] = await Promise.all([
       getUserDetailApi(route.params.id),
-      request.get('/system/roles')
+      request.get('/system/roles'),
+      getPositionListApi()
     ])
     const data = userRes.data
     form.username = data.username || ''
@@ -92,8 +104,10 @@ const loadUserData = async () => {
     form.email = data.email || ''
     form.phone = data.phone || ''
     form.status = data.status || '1'
+    form.positionId = data.positionId || ''
 
     allRoles.value = rolesRes.data || []
+    positionList.value = posRes.data || []
     if (data.roles && allRoles.value.length > 0) {
       form.roleIds = data.roles.map(code => {
         const role = allRoles.value.find(r => r.roleCode === code)
@@ -119,7 +133,8 @@ async function handleSubmit() {
       email: form.email,
       phone: form.phone,
       status: form.status,
-      roleIds: form.roleIds
+      roleIds: form.roleIds,
+      positionId: form.positionId
     })
     ElMessage.success('保存成功')
     router.push('/system/user')

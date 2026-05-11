@@ -18,4 +18,5 @@ public class SysUser extends BaseEntity {
     private String phone;
     private String avatar;
     private String status;
+    private String positionId;
 }

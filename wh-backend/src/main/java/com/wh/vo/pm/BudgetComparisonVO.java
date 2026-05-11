@@ -16,7 +16,11 @@ public class BudgetComparisonVO {
 
     private String projectName;
 
+    private BigDecimal directBudget;
+
     private BigDecimal totalBudget;
+
+    private BigDecimal managementReserve;
 
     private BigDecimal totalActual;
 

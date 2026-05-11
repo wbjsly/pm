@@ -11,6 +11,10 @@ import com.wh.entity.pm.WhPmBudgetItem;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class WhPmActualCostBo {
 
@@ -23,7 +27,8 @@ public class WhPmActualCostBo {
     }
 
     public IPage<WhPmActualCost> pageList(int pageNum, int pageSize, String projectId,
-                                          String budgetItemId, String sourceSystem) {
+                                          String budgetItemId, String sourceSystem,
+                                          String costTypes, String yearMonth) {
         Page<WhPmActualCost> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<WhPmActualCost> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WhPmActualCost::getDelFlag, "0");
@@ -36,8 +41,35 @@ public class WhPmActualCostBo {
         if (sourceSystem != null && !sourceSystem.isEmpty()) {
             wrapper.eq(WhPmActualCost::getSourceSystem, sourceSystem);
         }
+        if (costTypes != null && !costTypes.isEmpty()) {
+            String[] types = costTypes.split(",");
+            wrapper.in(WhPmActualCost::getCostType, Arrays.asList(types));
+        }
+        if (yearMonth != null && !yearMonth.isEmpty()) {
+            String[] months = yearMonth.split(",");
+            if (months.length == 1) {
+                wrapper.likeRight(WhPmActualCost::getCostDate, months[0]);
+            } else {
+                wrapper.and(w -> {
+                    w.likeRight(WhPmActualCost::getCostDate, months[0]);
+                    for (int i = 1; i < months.length; i++) {
+                        w.or().likeRight(WhPmActualCost::getCostDate, months[i]);
+                    }
+                });
+            }
+        }
         wrapper.orderByDesc(WhPmActualCost::getCostDate);
         return actualCostDao.selectPage(page, wrapper);
+    }
+
+    public List<Map<String, Object>> getMonthlyAggregation(String projectId) {
+        return actualCostDao.aggregateMonthlyByProject(projectId);
+    }
+
+    public Double getSumByFilter(String projectId, String yearMonth, String costTypes) {
+        String[] types = (costTypes != null && !costTypes.isEmpty()) ? costTypes.split(",") : null;
+        String[] months = (yearMonth != null && !yearMonth.isEmpty()) ? yearMonth.split(",") : null;
+        return actualCostDao.sumAmountByFilter(projectId, months, types);
     }
 
     public WhPmActualCost getById(String id) {

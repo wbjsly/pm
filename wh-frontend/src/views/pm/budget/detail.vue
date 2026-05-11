@@ -53,7 +53,7 @@
           <el-table :data="laborItems" style="width: 100%" size="small">
             <el-table-column label="岗位" width="160">
               <template #default="{ row }">
-                <span>{{ roleLabel(row.roleCode) }}</span>
+                <span>{{ row.positionName || roleLabel(row.roleCode) }}</span>
               </template>
             </el-table-column>
             <el-table-column label="工时(小时)" width="160">

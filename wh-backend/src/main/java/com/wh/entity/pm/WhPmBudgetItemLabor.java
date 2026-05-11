@@ -25,4 +25,7 @@ public class WhPmBudgetItemLabor extends BaseEntity {
 
     @TableField("AMOUNT")
     private String amount;
+
+    @TableField("POSITION_ID")
+    private String positionId;
 }

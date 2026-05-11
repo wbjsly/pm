@@ -3,36 +3,46 @@
     <el-card>
       <template #header>
         <div class="card-header">
+          <div class="header-left">
+            <span>预实对比 - {{ projectName }}</span>
+            <el-select v-model="selectedVersion" placeholder="版本" @change="loadData" style="width: 150px">
+              <el-option v-for="v in versions" :key="v.id" :label="v.version" :value="v.version" />
+            </el-select>
+          </div>
           <el-button @click="$router.back()">返回</el-button>
-          <span>预实对比 - {{ projectName }}</span>
-          <el-select v-model="selectedVersion" placeholder="版本" @change="loadData" style="width: 150px">
-            <el-option v-for="v in versions" :key="v.id" :label="v.version" :value="v.id" />
-          </el-select>
         </div>
       </template>
 
       <div v-loading="loading">
         <!-- Summary -->
         <el-row :gutter="16" style="margin-bottom: 16px">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-card shadow="never">
               <div class="stat-card">
-                <div class="stat-label">总预算</div>
-                <div class="stat-value">¥ {{ data.totalBudget?.toFixed(2) || '0.00' }}</div>
+                <div class="stat-label">项目直接预算</div>
+                <div class="stat-value">¥ {{ formatAmount(data.directBudget) }}</div>
               </div>
             </el-card>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-card shadow="never">
               <div class="stat-card">
                 <div class="stat-label">实际成本</div>
                 <div class="stat-value" :class="{ 'over-budget': data.totalRatio > 1 }">
-                  ¥ {{ data.totalActual?.toFixed(2) || '0.00' }}
+                  ¥ {{ formatAmount(data.totalActual) }}
                 </div>
               </div>
             </el-card>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
+            <el-card shadow="never">
+              <div class="stat-card">
+                <div class="stat-label">剩余预算</div>
+                <div class="stat-value" :style="{ color: (data.directBudget || 0) - (data.totalActual || 0) < 0 ? '#f56c6c' : '' }">¥ {{ formatAmount((data.directBudget || 0) - (data.totalActual || 0)) }}</div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="6">
             <el-card shadow="never">
               <div class="stat-card">
                 <div class="stat-label">执行比率</div>
@@ -52,15 +62,22 @@
               <el-tag size="small" :type="row.level === 1 ? '' : 'info'">{{ row.level === 1 ? '一级' : '二级' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="预算金额" width="130" align="right">
-            <template #default="{ row }">¥ {{ row.budgetAmount?.toFixed(2) || '0.00' }}</template>
+          <el-table-column label="项目直接预算" width="140" align="right">
+            <template #default="{ row }"><span class="amount-cell">¥ {{ formatAmount(row.budgetAmount) }}</span></template>
           </el-table-column>
-          <el-table-column label="实际金额" width="130" align="right">
-            <template #default="{ row }">¥ {{ row.actualAmount?.toFixed(2) || '0.00' }}</template>
+          <el-table-column label="实际金额" width="140" align="right">
+            <template #default="{ row }"><span class="amount-cell">¥ {{ formatAmount(row.actualAmount) }}</span></template>
+          </el-table-column>
+          <el-table-column label="剩余预算" width="140" align="right">
+            <template #default="{ row }">
+              <span class="amount-cell" :style="{ color: row.remaining < 0 ? '#f56c6c' : '' }">
+                ¥ {{ formatAmount(row.remaining) }}
+              </span>
+            </template>
           </el-table-column>
           <el-table-column label="比率" width="100" align="center">
             <template #default="{ row }">
-              <span :style="{ color: ratioColor(row.ratio), fontWeight: 'bold' }">
+              <span :style="{ color: ratioColumnColor(row.ratio), fontWeight: 'bold' }">
                 {{ ((row.ratio || 0) * 100).toFixed(1) }}%
               </span>
             </template>
@@ -77,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getBudgetComparisonApi, getBudgetVersionsApi } from '@/api/pm/budget'
@@ -104,6 +121,12 @@ const categoryLabels = {
   OTHER: '其他'
 }
 
+const formatAmount = (val) => {
+  const num = parseFloat(val) || 0
+  if (num === 0) return '0.00'
+  return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 const flatItems = computed(() => {
   const items = []
   for (const item of data.value.items || []) {
@@ -113,7 +136,8 @@ const flatItems = computed(() => {
       level: item.level,
       budgetAmount: item.budgetAmount,
       actualAmount: item.actualAmount,
-      ratio: item.ratio
+      ratio: item.ratio,
+      remaining: (item.budgetAmount || 0) - (item.actualAmount || 0)
     })
     for (const child of item.children || []) {
       let childName = categoryLabels[child.category] || child.category
@@ -125,7 +149,8 @@ const flatItems = computed(() => {
         level: child.level,
         budgetAmount: child.budgetAmount,
         actualAmount: child.actualAmount,
-        ratio: child.ratio
+        ratio: child.ratio,
+        remaining: (child.budgetAmount || 0) - (child.actualAmount || 0)
       })
     }
   }
@@ -144,16 +169,23 @@ const ratioColor = (ratio) => {
   return '#f56c6c'
 }
 
+const ratioColumnColor = (ratio) => {
+  if (!ratio) return '#67c23a'
+  if (ratio >= 1) return '#f56c6c'
+  if (ratio > 0.9) return '#e6a23c'
+  return '#67c23a'
+}
+
 const showDetail = (row) => {
-  // Could navigate to actual cost detail filtered by budget item
   ElMessage.info(`查看科目: ${row.name}`)
 }
 
 const loadData = async () => {
+  if (!route.path.startsWith('/pm/budget/comparison')) return
   loading.value = true
   try {
-    // Use budgetId from query or projectId from params
     const budgetId = route.query.budgetId || route.params.projectId
+    if (!budgetId) return
     const res = await getBudgetComparisonApi(budgetId, selectedVersion.value ? { version: selectedVersion.value } : {})
     data.value = res.data
     projectName.value = res.data.projectName || ''
@@ -169,15 +201,22 @@ const loadVersions = async () => {
     const res = await getBudgetVersionsApi(route.params.projectId)
     versions.value = res.data || []
     if (versions.value.length > 0) {
-      selectedVersion.value = versions.value[0].id
+      selectedVersion.value = versions.value[0].version
     }
   } catch (e) {
     // No versions available
   }
 }
 
-onMounted(() => {
-  loadVersions()
+onMounted(async () => {
+  await loadVersions()
+  loadData()
+})
+
+watch([() => route.params.projectId, () => route.query.budgetId], async ([newProjectId], [oldProjectId]) => {
+  if (newProjectId !== oldProjectId) {
+    await loadVersions()
+  }
   loadData()
 })
 </script>
@@ -185,8 +224,16 @@ onMounted(() => {
 <style scoped>
 .card-header {
   display: flex;
-  gap: 16px;
+  justify-content: space-between;
   align-items: center;
+}
+.header-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.amount-cell {
+  font-variant-numeric: tabular-nums;
 }
 .stat-card {
   text-align: center;

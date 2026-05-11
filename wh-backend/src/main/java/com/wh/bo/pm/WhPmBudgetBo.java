@@ -41,6 +41,7 @@ public class WhPmBudgetBo {
     private final WhPmActualCostDao actualCostDao;
     private final com.wh.dao.pm.WhPmCharterDao charterDao;
     private final com.wh.dao.system.SysUserDao sysUserDao;
+    private final com.wh.dao.system.SysPositionDao sysPositionDao;
     private final SequenceService sequenceService;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
@@ -52,6 +53,7 @@ public class WhPmBudgetBo {
                         WhPmActualCostDao actualCostDao,
                         com.wh.dao.pm.WhPmCharterDao charterDao,
                         com.wh.dao.system.SysUserDao sysUserDao,
+                        com.wh.dao.system.SysPositionDao sysPositionDao,
                         SequenceService sequenceService,
                         RuntimeService runtimeService, TaskService taskService) {
         this.budgetDao = budgetDao;
@@ -62,6 +64,7 @@ public class WhPmBudgetBo {
         this.actualCostDao = actualCostDao;
         this.charterDao = charterDao;
         this.sysUserDao = sysUserDao;
+        this.sysPositionDao = sysPositionDao;
         this.sequenceService = sequenceService;
         this.runtimeService = runtimeService;
         this.taskService = taskService;
@@ -267,7 +270,11 @@ public class WhPmBudgetBo {
                    .eq(WhPmBudget::getDelFlag, "0");
             budget = budgetDao.selectOne(wrapper);
         } else {
-            budget = getLatestApprovedBudget(budgetId);
+            WhPmBudget inputBudget = budgetDao.selectById(budgetId);
+            if (inputBudget == null || "1".equals(inputBudget.getDelFlag())) {
+                throw new ServiceException(404, "预算不存在");
+            }
+            budget = getLatestApprovedBudget(inputBudget.getProjectId());
         }
 
         if (budget == null) {
@@ -305,12 +312,16 @@ public class WhPmBudgetBo {
         vo.setItems(itemVOs);
 
         // Calculate totals
-        BigDecimal totalBudget = new BigDecimal(budget.getCostBaseline());
+        BigDecimal directBudget = new BigDecimal(budget.getCostBaseline());
+        BigDecimal managementReserve = new BigDecimal(budget.getManagementReserve() != null ? budget.getManagementReserve() : "0");
+        BigDecimal totalBudget = directBudget.add(managementReserve);
         BigDecimal totalActual = sumActualForItems(itemVOs);
+        vo.setDirectBudget(directBudget);
         vo.setTotalBudget(totalBudget);
+        vo.setManagementReserve(managementReserve);
         vo.setTotalActual(totalActual);
-        vo.setTotalRatio(totalBudget.compareTo(BigDecimal.ZERO) > 0
-                ? totalActual.divide(totalBudget, 4, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        vo.setTotalRatio(directBudget.compareTo(BigDecimal.ZERO) > 0
+                ? totalActual.divide(directBudget, 4, RoundingMode.HALF_UP) : BigDecimal.ZERO);
 
         return vo;
     }
@@ -345,6 +356,7 @@ public class WhPmBudgetBo {
             WhPmBudgetItemLabor labor = new WhPmBudgetItemLabor();
             labor.setBudgetItemId(item.getId());
             labor.setRoleCode(req.getRoleCode());
+            labor.setPositionId(req.getPositionId());
             labor.setHours(req.getHours() != null ? req.getHours() : "0");
             labor.setCostRate(req.getCostRate() != null ? req.getCostRate() : "0");
             labor.setAmount(req.getAmount() != null ? req.getAmount() : "0");
@@ -463,8 +475,13 @@ public class WhPmBudgetBo {
             WhPmBudgetItemLabor labor = laborMap.get(item.getId());
             if (labor != null) {
                 vo.setRoleCode(labor.getRoleCode());
+                vo.setPositionId(labor.getPositionId());
                 vo.setHours(labor.getHours());
                 vo.setCostRate(new BigDecimal(labor.getCostRate()));
+                if (labor.getPositionId() != null) {
+                    var pos = sysPositionDao.selectById(labor.getPositionId());
+                    vo.setPositionName(pos != null ? pos.getName() : null);
+                }
             }
         } else if ("PROCUREMENT".equals(item.getCategory())) {
             WhPmBudgetItemProcurement procurement = procurementMap.get(item.getId());

@@ -14,6 +14,7 @@
         <el-descriptions-item label="真实姓名" :span="2">{{ userData.realName }}</el-descriptions-item>
         <el-descriptions-item label="邮箱">{{ userData.email || '-' }}</el-descriptions-item>
         <el-descriptions-item label="手机">{{ userData.phone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="成本岗位">{{ userData.positionName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="userData.status === '1' ? 'success' : 'danger'">{{ userData.status === '1' ? '启用' : '禁用' }}</el-tag>
         </el-descriptions-item>

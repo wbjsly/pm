@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wh.common.R;
+import com.wh.dao.system.SysPositionDao;
 import com.wh.dao.system.SysRoleDao;
 import com.wh.dao.system.SysUserDao;
 import com.wh.dao.system.SysUserRoleDao;
+import com.wh.entity.system.SysPosition;
 import com.wh.entity.system.SysUser;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +24,18 @@ public class SysUserController {
     private final SysUserRoleDao sysUserRoleDao;
     private final SysRoleDao sysRoleDao;
     private final PasswordEncoder passwordEncoder;
+    private final SysPositionDao sysPositionDao;
 
     public SysUserController(SysUserDao sysUserDao,
                              SysUserRoleDao sysUserRoleDao,
                              SysRoleDao sysRoleDao,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             SysPositionDao sysPositionDao) {
         this.sysUserDao = sysUserDao;
         this.sysUserRoleDao = sysUserRoleDao;
         this.sysRoleDao = sysRoleDao;
         this.passwordEncoder = passwordEncoder;
+        this.sysPositionDao = sysPositionDao;
     }
 
     @GetMapping
@@ -38,12 +43,16 @@ public class SysUserController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String positionId) {
         Page<SysUser> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysUser::getDelFlag, "0");
         if (status != null && !status.isEmpty()) {
             wrapper.eq(SysUser::getStatus, status);
+        }
+        if (positionId != null && !positionId.isEmpty()) {
+            wrapper.eq(SysUser::getPositionId, positionId);
         }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(SysUser::getRealName, keyword)
@@ -92,6 +101,7 @@ public class SysUserController {
         if (req.containsKey("email")) user.setEmail((String) req.get("email"));
         if (req.containsKey("phone")) user.setPhone((String) req.get("phone"));
         if (req.containsKey("status")) user.setStatus((String) req.get("status"));
+        if (req.containsKey("positionId")) user.setPositionId((String) req.get("positionId"));
 
         sysUserDao.updateById(user);
 
@@ -145,6 +155,13 @@ public class SysUserController {
         map.put("phone", user.getPhone());
         map.put("avatar", user.getAvatar());
         map.put("status", user.getStatus());
+        map.put("positionId", user.getPositionId());
+        if (user.getPositionId() != null) {
+            SysPosition pos = sysPositionDao.selectById(user.getPositionId());
+            map.put("positionName", pos != null ? pos.getName() : null);
+        } else {
+            map.put("positionName", null);
+        }
         return map;
     }
 

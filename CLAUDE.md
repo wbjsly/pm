@@ -4,6 +4,8 @@
 
 后端基于 Spring Boot 2.7 + Java 11，前端基于 Vue 3 + Vite + Element Plus。
 
+## 后端
+
 **分层：BO 模式（非传统 Service）**
 
 Controller 直接注入带有 `@Service` 注解的 BO 类（`com.wh.bo.pm.WhPm*Bo`）。BO 类包含所有业务逻辑和 DAO 调用，没有 Service 接口层。`com.wh.dao` 下存放 MyBatis-Plus 的 Mapper，`com.wh.entity` 下的实体类继承 `BaseEntity`（UUID 主键、逻辑删除、乐观锁、自动填充的审计字段）。

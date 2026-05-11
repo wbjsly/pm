@@ -154,6 +154,12 @@ const routes = [
         meta: { title: '工作日历', group: '系统管理', perm: 'ROLE_ADMIN' }
       },
       {
+        path: '/system/cost-quota',
+        name: 'CostQuota',
+        component: () => import('@/views/system/cost-quota/index.vue'),
+        meta: { title: '交付成本定额', group: '系统管理', perm: 'ROLE_ADMIN,ROLE_PM' }
+      },
+      {
         path: '/system/user',
         name: 'UserList',
         component: () => import('@/views/system/user/index.vue'),

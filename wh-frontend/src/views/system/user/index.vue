@@ -6,6 +6,9 @@
           <span style="font-weight: bold; font-size: 16px;">用户管理</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-input v-model="queryParams.keyword" placeholder="用户名/姓名" clearable style="width: 160px" />
+            <el-select v-model="queryParams.positionId" placeholder="成本岗位" clearable style="width: 140px">
+              <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
+            </el-select>
             <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 100px">
               <el-option label="启用" value="1" />
               <el-option label="禁用" value="0" />
@@ -23,6 +26,7 @@
         <el-table-column prop="realName" label="真实姓名" width="120" />
         <el-table-column prop="email" label="邮箱" width="180" />
         <el-table-column prop="phone" label="手机" width="140" />
+        <el-table-column prop="positionName" label="成本岗位" width="120" />
         <el-table-column label="角色" width="160">
           <template #default="{ row }">
             <el-tag v-for="role in row.roles" :key="role" size="small" style="margin-right: 4px">{{ roleMap[role] || role }}</el-tag>
@@ -100,6 +104,7 @@
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { getUserListApi, deleteUserApi, resetPasswordApi, updateUserApi, getAllRolesApi } from '@/api/system/user'
+import { getPositionListApi } from '@/api/system/costQuota'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, RefreshRight, Delete, SwitchButton } from '@element-plus/icons-vue'
 
@@ -110,12 +115,14 @@ const tableData = ref([])
 const tableKey = ref(0)
 const total = ref(0)
 const roleMap = ref({})
+const positionList = ref([])
 
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   keyword: '',
-  status: ''
+  status: '',
+  positionId: ''
 })
 
 const passwordDialogVisible = ref(false)
@@ -140,7 +147,7 @@ const passwordRules = {
   ]
 }
 
-onMounted(() => { loadRoles(); loadData() })
+onMounted(() => { loadRoles(); loadPositions(); loadData() })
 onActivated(loadData)
 
 async function loadRoles() {
@@ -148,6 +155,15 @@ async function loadRoles() {
     const res = await getAllRolesApi()
     const roles = res.data || []
     roles.forEach(r => { roleMap.value[r.roleCode] = r.roleName })
+  } catch {
+    // Ignore
+  }
+}
+
+async function loadPositions() {
+  try {
+    const res = await getPositionListApi()
+    positionList.value = res.data || []
   } catch {
     // Ignore
   }
@@ -170,6 +186,7 @@ async function loadData() {
 function resetQuery() {
   queryParams.keyword = ''
   queryParams.status = ''
+  queryParams.positionId = ''
   queryParams.pageNum = 1
   loadData()
 }
