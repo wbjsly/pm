@@ -6,11 +6,7 @@
           <span style="font-weight: bold; font-size: 16px;">项目立项</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 120px">
-              <el-option label="草稿" value="DRAFT" />
-              <el-option label="审批中" value="PENDING_APPROVAL" />
-              <el-option label="已通过" value="APPROVED" />
-              <el-option label="已驳回" value="REJECTED" />
-              <el-option label="已关闭" value="CLOSED" />
+              <el-option v-for="item in dictStore.getDictItems('CHARTER_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
             </el-select>
             <el-input v-model="queryParams.keyword" placeholder="项目名称/编号" clearable style="width: 180px" />
             <el-button type="primary" @click="loadData">查询</el-button>
@@ -42,17 +38,17 @@
         <el-table-column prop="pmName" label="项目经理" width="100" />
         <el-table-column prop="progress" label="项目进度" width="100">
           <template #default="{ row }">
-            <el-tag :type="progressTagType(row.progress)">{{ progressLabel(row.progress) }}</el-tag>
+            <el-tag :type="dictStore.getTagType('CHARTER_PROGRESS', row.progress)">{{ dictStore.getLabel('CHARTER_PROGRESS', row.progress) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="startDate" label="计划开始日期" width="120" />
         <el-table-column prop="endDate" label="计划结束日期" width="120" />
         <el-table-column prop="status" label="审批状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+            <el-tag :type="dictStore.getTagType('CHARTER_STATUS', row.status)">{{ dictStore.getLabel('CHARTER_STATUS', row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-tooltip content="查看" placement="top">
               <el-button link type="primary" @click="$router.push(`/pm/charter/detail/${row.id}`)">
@@ -68,6 +64,18 @@
               <el-tooltip content="提交" placement="top">
                 <el-button link type="success" @click="handleSubmit(row.id)">
                   <el-icon><Promotion /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+            <template v-if="row.status === 'PENDING_APPROVAL'">
+              <el-tooltip content="通过" placement="top">
+                <el-button link type="success" @click="handleApprove(row.id)">
+                  <el-icon><Select /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="驳回" placement="top">
+                <el-button link type="danger" @click="handleReject(row.id)">
+                  <el-icon><CloseBold /></el-icon>
                 </el-button>
               </el-tooltip>
             </template>
@@ -93,17 +101,35 @@
         style="margin-top: 16px; justify-content: flex-end;"
       />
     </el-card>
+
+    <el-dialog v-model="approvalDialog.visible" :title="approvalDialog.mode === 'approve' ? '审批通过' : '驳回'" width="450px">
+      <el-form label-width="80px">
+        <el-form-item :label="approvalDialog.mode === 'approve' ? '审批意见' : '驳回原因'">
+          <el-input v-model="approvalDialog.comment" type="textarea" :rows="3"
+            :placeholder="approvalDialog.mode === 'approve' ? '可选，输入审批意见' : '请输入驳回原因'" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="approvalDialog.visible = false">取消</el-button>
+        <el-button :type="approvalDialog.mode === 'approve' ? 'success' : 'danger'" @click="confirmApproval">
+          {{ approvalDialog.mode === 'approve' ? '确认通过' : '确认驳回' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCharterListApi, deleteCharterApi, submitCharterApi } from '@/api/pm/charter'
+import { getCharterListApi, deleteCharterApi, submitCharterApi, approveCharterApi, rejectCharterApi } from '@/api/pm/charter'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, Edit, Promotion, Delete } from '@element-plus/icons-vue'
+import { View, Edit, Promotion, Delete, Select, CloseBold } from '@element-plus/icons-vue'
+
+import { useDictStore } from '@/store/dict'
 
 const router = useRouter()
+const dictStore = useDictStore()
 
 const tableData = ref([])
 const total = ref(0)
@@ -115,26 +141,6 @@ const queryParams = reactive({
   status: '',
   keyword: ''
 })
-
-const statusTagType = (status) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', REJECTED: 'danger', CLOSED: '' }
-  return map[status] || 'info'
-}
-
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
-  return map[status] || status
-}
-
-const progressTagType = (progress) => {
-  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
-  return map[progress] || 'info'
-}
-
-const progressLabel = (progress) => {
-  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[progress] || progress
-}
 
 const categoryTagType = (cat) => {
   const map = { CONTRACT: 'primary', R_D: 'warning', ADVANCE: 'success', PUBLIC: 'info' }
@@ -165,18 +171,64 @@ const resetQuery = () => {
   loadData()
 }
 
-const handleDelete = async (id) => {
-  await ElMessageBox.confirm('确认删除该章程？', '提示', { type: 'warning' })
-  await deleteCharterApi(id)
-  ElMessage.success('删除成功')
-  loadData()
+const approvalDialog = reactive({
+  visible: false,
+  mode: 'approve',
+  comment: '',
+  charterId: ''
+})
+
+const showApprovalDialog = (id, mode) => {
+  approvalDialog.charterId = id
+  approvalDialog.mode = mode
+  approvalDialog.comment = ''
+  approvalDialog.visible = true
+}
+
+const handleApprove = (id) => showApprovalDialog(id, 'approve')
+const handleReject = (id) => showApprovalDialog(id, 'reject')
+
+const confirmApproval = async () => {
+  const { charterId, mode, comment } = approvalDialog
+  try {
+    if (mode === 'approve') {
+      await approveCharterApi(charterId, { rejectReason: comment || undefined })
+      ElMessage.success('审批通过')
+    } else {
+      if (!comment) {
+        ElMessage.warning('请输入驳回原因')
+        return
+      }
+      await rejectCharterApi(charterId, { rejectReason: comment })
+      ElMessage.success('已驳回')
+    }
+    approvalDialog.visible = false
+    loadData()
+  } catch {
+    // handled by interceptor
+  }
 }
 
 const handleSubmit = async (id) => {
-  await ElMessageBox.confirm('确认提交审批？', '提示', { type: 'warning' })
-  await submitCharterApi(id)
-  ElMessage.success('提交成功')
-  loadData()
+  try {
+    await ElMessageBox.confirm('确认提交审批？', '提示', { type: 'warning' })
+    await submitCharterApi(id)
+    ElMessage.success('提交成功')
+    loadData()
+  } catch {
+    // user cancelled or error
+  }
+}
+
+const handleDelete = async (id) => {
+  try {
+    await ElMessageBox.confirm('确认删除该章程？', '提示', { type: 'warning' })
+    await deleteCharterApi(id)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch {
+    // user cancelled or error
+  }
 }
 
 onMounted(loadData)

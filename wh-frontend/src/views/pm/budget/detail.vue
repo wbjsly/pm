@@ -27,13 +27,13 @@
           <el-col :span="12">
             <div class="info-item">
               <label>版本号</label>
-              <el-tag :type="versionType">{{ data.budget?.version || '' }}</el-tag>
+              <el-tag :type="dictStore.getTagType('BUDGET_STATUS', data.budget?.status)">{{ data.budget?.version || '' }}</el-tag>
             </div>
           </el-col>
           <el-col :span="12">
             <div class="info-item">
               <label>状态</label>
-              <el-tag :type="statusType(data.budget?.status)">{{ statusLabel(data.budget?.status) }}</el-tag>
+              <el-tag :type="dictStore.getTagType('BUDGET_STATUS', data.budget?.status)">{{ dictStore.getLabel('BUDGET_STATUS', data.budget?.status) }}</el-tag>
             </div>
           </el-col>
         </el-row>
@@ -174,7 +174,10 @@ import { ElMessage } from 'element-plus'
 import { getBudgetDetailWithItemsApi } from '@/api/pm/budget'
 import { getCharterListApi } from '@/api/pm/charter'
 
+import { useDictStore } from '@/store/dict'
+
 const route = useRoute()
+const dictStore = useDictStore()
 const data = ref({
   budget: {},
   items: []
@@ -236,20 +239,7 @@ const roleLabel = (code) => {
   return map[code] || code
 }
 
-const statusType = (status) => {
-  const map = { DRAFT: 'info', PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }
-  return map[status] || 'info'
-}
-
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING: '审批中', APPROVED: '已审批', REJECTED: '已驳回' }
-  return map[status] || status
-}
-
-const versionType = (status) => {
-  const s = data.value.budget?.status
-  return statusType(s)
-}
+// Budget status: migrated to dictStore (BUDGET_STATUS)
 
 const loadData = async () => {
   if (!route.params.id) return

@@ -25,7 +25,7 @@
           </el-icon>
           <span style="font-weight: bold; margin-right: 24px; font-size: 14px; flex-shrink: 0; min-width: 100px;">{{ product.productName }}</span>
           <el-tag size="small" style="flex-shrink: 0;">{{ product.productCode }}</el-tag>
-          <el-tag size="small" :type="statusTagType(product.status)" style="margin-left: 16px; flex-shrink: 0;">{{ statusLabel(product.status) }}</el-tag>
+          <el-tag size="small" :type="dictStore.getTagType('PRODUCT_STATUS', product.status)" style="margin-left: 16px; flex-shrink: 0;">{{ dictStore.getLabel('PRODUCT_STATUS', product.status) }}</el-tag>
           <el-tag v-if="product.productVersion" size="small" type="warning" style="margin-left: 16px; flex-shrink: 0;">v{{ product.productVersion }}</el-tag>
           <span v-if="product.versionReleaseDate" style="margin-left: 16px; color: #606266; font-size: 13px; white-space: nowrap; flex-shrink: 0;">上架日期: {{ product.versionReleaseDate.substring(0, 10) }}</span>
           <span style="margin-left: 16px; color: #409eff; font-size: 13px; white-space: nowrap; flex-shrink: 0;">模块: {{ product.moduleCount || 0 }}个</span>
@@ -56,7 +56,7 @@
             <el-table-column prop="moduleVersion" label="模块版本" width="100" />
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
-                <el-tag size="small" :type="moduleStatusTagType(row.status)">{{ moduleStatusLabel(row.status) }}</el-tag>
+                <el-tag size="small" :type="dictStore.getTagType('MODULE_STATUS', row.status)">{{ dictStore.getLabel('MODULE_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="description" label="描述" min-width="150" />
@@ -113,8 +113,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" style="width: 100%">
-            <el-option label="启用" value="ACTIVE" />
-            <el-option label="停用" value="INACTIVE" />
+            <el-option v-for="item in dictStore.getDictItems('PRODUCT_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述">
@@ -144,8 +143,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="moduleForm.status" style="width: 100%">
-            <el-option label="启用" value="ACTIVE" />
-            <el-option label="停用" value="INACTIVE" />
+            <el-option v-for="item in dictStore.getDictItems('MODULE_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述">
@@ -166,6 +164,9 @@ import { getProductListApi, createProductApi, updateProductApi, deleteProductApi
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, ArrowRight } from '@element-plus/icons-vue'
 
+import { useDictStore } from '@/store/dict'
+
+const dictStore = useDictStore()
 const productList = ref([])
 const total = ref(0)
 const loading = ref(false)
@@ -331,20 +332,7 @@ const handleModuleSubmit = async () => {
   }
 }
 
-const statusTagType = (status) => {
-  const map = { ACTIVE: 'success', INACTIVE: 'danger', PLACEHOLDER: 'info' }
-  return map[status] || 'info'
-}
-const statusLabel = (status) => {
-  const map = { ACTIVE: '启用', INACTIVE: '停用', PLACEHOLDER: '占位产品' }
-  return map[status] || status
-}
-const moduleStatusTagType = (status) => {
-  return status === 'ACTIVE' ? 'success' : 'danger'
-}
-const moduleStatusLabel = (status) => {
-  return status === 'ACTIVE' ? '启用' : '停用'
-}
+// Product/module status: migrated to dictStore (PRODUCT_STATUS, MODULE_STATUS)
 
 onMounted(loadData)
 onActivated(loadData)

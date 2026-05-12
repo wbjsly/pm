@@ -24,7 +24,7 @@
             <el-table-column prop="projectName" label="项目名称" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="dictStore.getTagType('CHARTER_STATUS', row.status)" size="small">{{ dictStore.getLabel('CHARTER_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="createDate" label="创建日期" width="120" />
@@ -122,8 +122,11 @@ import { getActiveCostWarningsApi } from '@/api/pm/costWarning'
 import { getWorkHoursStatsApi } from '@/api/pm/workHours'
 import { useUserStore } from '@/store/user'
 
+import { useDictStore } from '@/store/dict'
+
 const router = useRouter()
 const userStore = useUserStore()
+const dictStore = useDictStore()
 
 const stats = ref({ total: 0, draft: 0, pending: 0, approved: 0, rejected: 0 })
 const recentProjects = ref([])
@@ -206,15 +209,7 @@ function handleGoWorkHours() {
   router.push('/pm/work-hours')
 }
 
-function statusTagType(status) {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', REJECTED: 'danger', CLOSED: 'info' }
-  return map[status] || ''
-}
-
-function statusLabel(status) {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
-  return map[status] || status
-}
+// Charter status: migrated to dictStore (CHARTER_STATUS)
 </script>
 
 <style scoped>

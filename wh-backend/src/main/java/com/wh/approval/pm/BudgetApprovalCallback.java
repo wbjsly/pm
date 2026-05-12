@@ -61,8 +61,8 @@ public class BudgetApprovalCallback implements ApprovalCompletedCallback {
     }
 
     private String toDraftVersion(String currentVersion) {
-        // x.7 -> x.1
+        // x.7 -> x.5
         String[] parts = currentVersion.substring(1).split("\\.");
-        return "v" + parts[0] + ".1";
+        return "v" + parts[0] + ".5";
     }
 }

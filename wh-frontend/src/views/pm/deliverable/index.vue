@@ -6,11 +6,7 @@
           <span style="font-weight: bold; font-size: 16px;">成果管理</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-select v-model="progressFilter" multiple collapse-tags collapse-tags-tooltip placeholder="项目进度" clearable style="width: 180px">
-              <el-option label="进行中" value="IN_PROGRESS" />
-              <el-option label="已验收" value="ACCEPTED" />
-              <el-option label="已完成" value="COMPLETED" />
-              <el-option label="已暂停" value="SUSPENDED" />
-              <el-option label="已取消" value="CANCELLED" />
+              <el-option v-for="item in dictStore.getDictItems('CHARTER_PROGRESS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
             </el-select>
             <el-input v-model="keyword" placeholder="搜索项目名称/简称" clearable style="width: 180px" @keyup.enter="loadProjects" />
             <el-button type="primary" @click="loadProjects">查询</el-button>
@@ -30,7 +26,7 @@
           <span v-if="project.pmName" style="margin-right: 24px; color: #666; font-size: 12px;">
             <el-icon style="vertical-align: -2px;"><User /></el-icon> {{ project.pmName }}
           </span>
-          <el-tag size="small" :type="progressTagType(project.progress)">{{ progressLabel(project.progress) }}</el-tag>
+          <el-tag size="small" :type="dictStore.getTagType('CHARTER_PROGRESS', project.progress)">{{ dictStore.getLabel('CHARTER_PROGRESS', project.progress) }}</el-tag>
           <span v-if="project.endDate" style="margin-left: 24px; color: #666; font-size: 12px;">完成日期: {{ project.endDate }}</span>
           <span v-if="deliverableCounts[project.id] != null" style="margin-left: 24px; color: #666; font-size: 12px;">成果物: {{ deliverableCounts[project.id] }}个</span>
           <span v-if="attachmentCounts[project.id] != null" style="margin-left: 16px; color: #666; font-size: 12px;">附件: {{ attachmentCounts[project.id] }}个</span>
@@ -91,7 +87,7 @@
             <el-table-column prop="createByName" label="创建人" width="100" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="dictStore.getTagType('DELIVERABLE_STATUS', row.status)">{{ dictStore.getLabel('DELIVERABLE_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="160" fixed="right">
@@ -150,8 +146,11 @@ import { getCharterListApi } from '@/api/pm/charter'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, Promotion, Delete, Plus, Paperclip, Document, Close, ArrowRight, User } from '@element-plus/icons-vue'
 
+import { useDictStore } from '@/store/dict'
+
 const router = useRouter()
 const route = useRoute()
+const dictStore = useDictStore()
 
 const projectList = ref([])
 const total = ref(0)
@@ -167,26 +166,6 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 5
 })
-
-const statusTagType = (status) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', DELIVERED: '', REJECTED: 'danger' }
-  return map[status] || 'info'
-}
-
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', DELIVERED: '已交付', REJECTED: '已驳回' }
-  return map[status] || status
-}
-
-const progressTagType = (progress) => {
-  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
-  return map[progress] || 'info'
-}
-
-const progressLabel = (progress) => {
-  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[progress] || progress
-}
 
 const getAttachments = (row) => {
   if (!row.attachments) return []

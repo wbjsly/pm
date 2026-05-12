@@ -235,10 +235,12 @@ public class WhPmCharterBo {
             throw new ServiceException("只有草稿或被驳回的章程可以提交审批");
         }
 
-        // Start Flowable process
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
         java.util.Map<String, Object> variables = new java.util.HashMap<>();
         variables.put("flowCode", "PM_CHARTER_APPROVAL");
         variables.put("bizId", id);
+        variables.put("submitter", currentUserId);
         variables.put("assignee", charter.getSponsorId());
 
         org.flowable.engine.runtime.ProcessInstance instance = runtimeService.startProcessInstanceByKey(
@@ -248,11 +250,14 @@ public class WhPmCharterBo {
         charter.setProcessInstanceId(instance.getId());
         charterDao.updateById(charter);
 
-        // Complete the user task as submit
-        Task task = taskService.createTaskQuery().processInstanceId(instance.getId()).singleResult();
+        // Auto-complete submitConfirm task to forward to sponsor approval
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(instance.getId())
+                .taskDefinitionKey("submitConfirm")
+                .singleResult();
         if (task != null) {
-            // Task assigned to SPONSOR, just log it
-            log.info("Charter {} submitted for approval, task: {}", id, task.getId());
+            taskService.complete(task.getId());
+            log.info("Charter {} submitted, submitConfirm completed, forwarded to sponsor approval", id);
         }
     }
 

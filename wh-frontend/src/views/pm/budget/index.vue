@@ -12,10 +12,7 @@
               <el-option v-for="pm in pmList" :key="pm.id" :label="pm.label" :value="pm.id" />
             </el-select>
             <el-select v-model="queryParams.status" placeholder="状态" clearable style="width: 120px; margin-right: 8px">
-              <el-option label="草稿" value="DRAFT" />
-              <el-option label="审批中" value="PENDING" />
-              <el-option label="已审批" value="APPROVED" />
-              <el-option label="已驳回" value="REJECTED" />
+              <el-option v-for="item in dictStore.getDictItems('BUDGET_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
             </el-select>
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
@@ -61,7 +58,7 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+            <el-tag :type="dictStore.getTagType('BUDGET_STATUS', row.status)">{{ dictStore.getLabel('BUDGET_STATUS', row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createDate" label="创建日期" width="120">
@@ -116,7 +113,10 @@ import { Plus, View, Edit, Delete, Promotion, Document } from '@element-plus/ico
 import { getBudgetListApi, deleteBudgetApi, submitBudgetApi } from '@/api/pm/budget'
 import { getCharterListApi } from '@/api/pm/charter'
 
+import { useDictStore } from '@/store/dict'
+
 const router = useRouter()
+const dictStore = useDictStore()
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
@@ -131,11 +131,6 @@ const queryParams = ref({
   status: ''
 })
 
-const statusType = (status) => {
-  const map = { DRAFT: 'info', PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }
-  return map[status] || 'info'
-}
-
 const formatMoney = (val) => {
   const num = parseFloat(val) || 0
   if (num === 0) return '-'
@@ -148,18 +143,13 @@ const formatPercent = (val) => {
   return (num * 100).toFixed(1) + '%'
 }
 
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING: '审批中', APPROVED: '已审批', REJECTED: '已驳回' }
-  return map[status] || status
-}
-
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return dateStr.substring(0, 10)
 }
 
 const handleUpgrade = (row) => {
-  router.push(`/pm/budget/form/${row.id}`)
+  router.push(`/pm/budget/upgrade/${row.id}`)
 }
 
 const loadProjects = async () => {

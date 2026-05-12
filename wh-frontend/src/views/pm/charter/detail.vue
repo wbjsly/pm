@@ -13,7 +13,7 @@
         <el-descriptions-item label="项目名称">{{ detail.projectName }}<span v-if="detail.projectShortName" style="color: #909399;">（简称：{{ detail.projectShortName }}）</span></el-descriptions-item>
         <el-descriptions-item label="项目经理">{{ detail.pmName || detail.pmId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="项目进度">
-          <el-tag :type="progressTagType(detail.progress)">{{ progressLabel(detail.progress) }}</el-tag>
+          <el-tag :type="dictStore.getTagType('CHARTER_PROGRESS', detail.progress)">{{ dictStore.getLabel('CHARTER_PROGRESS', detail.progress) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="项目分类">
           <el-tag v-if="detail.projectCategory" :type="categoryTagType(detail.projectCategory)">{{ categoryLabel(detail.projectCategory) }}</el-tag>
@@ -31,7 +31,7 @@
             <el-descriptions-item label="项目发起人">{{ detail.sponsorName || detail.sponsorId || '-' }}</el-descriptions-item>
             <el-descriptions-item label="预算上限">{{ formatBudget(detail.budgetCap) }}</el-descriptions-item>
             <el-descriptions-item label="审批状态">
-              <el-tag :type="statusTagType(detail.status)">{{ statusLabel(detail.status) }}</el-tag>
+              <el-tag :type="dictStore.getTagType('CHARTER_STATUS', detail.status)">{{ dictStore.getLabel('CHARTER_STATUS', detail.status) }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="项目含税产值">{{ formatMoney(detail.outputValueTaxable) }}</el-descriptions-item>
             <el-descriptions-item label="项目不含税产值">{{ formatMoney(detail.outputValueExcludingTax) }}</el-descriptions-item>
@@ -62,7 +62,7 @@
               </el-table-column>
               <el-table-column prop="status" label="状态" width="100">
                 <template #default="{ row }">
-                  <el-tag size="small" :type="budgetStatusTagType(row.status)">{{ budgetStatusLabel(row.status) }}</el-tag>
+                  <el-tag size="small" :type="dictStore.getTagType('BUDGET_STATUS', row.status)">{{ dictStore.getLabel('BUDGET_STATUS', row.status) }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="createByName" label="创建人" width="100" />
@@ -230,7 +230,7 @@
             <el-table-column prop="moduleName" label="模块" width="80" />
             <el-table-column prop="status" label="状态" width="90">
               <template #default="{ row }">
-                <el-tag size="small" :type="wbsStatusTagType(row.status)">{{ wbsStatusLabel(row.status) }}</el-tag>
+                <el-tag size="small" :type="dictStore.getTagType('WBS_ELEMENT_STATUS', row.status)">{{ dictStore.getLabel('WBS_ELEMENT_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="effortHours" label="工时(h)" width="90" />
@@ -267,7 +267,7 @@
             <el-table-column prop="createByName" label="创建人" width="100" />
             <el-table-column prop="status" label="状态" width="90">
               <template #default="{ row }">
-                <el-tag size="small" :type="deliverableStatusTagType(row.status)">{{ deliverableStatusLabel(row.status) }}</el-tag>
+                <el-tag size="small" :type="dictStore.getTagType('DELIVERABLE_STATUS', row.status)">{{ dictStore.getLabel('DELIVERABLE_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
@@ -289,8 +289,11 @@ import { getDeliverableListApi } from '@/api/pm/deliverable'
 import { getActualCostListApi, getActualCostAggregationApi, getActualCostSumApi } from '@/api/pm/actualCost'
 import { ElMessage } from 'element-plus'
 
+import { useDictStore } from '@/store/dict'
+
 const route = useRoute()
 const router = useRouter()
+const dictStore = useDictStore()
 const detail = ref({})
 const loading = ref(false)
 const activeTab = ref('projectInfo')
@@ -398,35 +401,10 @@ const comparisonRatioColumnColor = (ratio) => {
   return '#67c23a'
 }
 
-// WBS helpers
-const wbsStatusTagType = (s) => {
-  const map = { NOT_STARTED: 'info', IN_DEVELOPMENT: 'warning', TESTING: 'primary', COMPLETED: 'success', SUSPENDED: 'danger', CANCELLED: 'info' }
-  return map[s] || 'info'
-}
-const wbsStatusLabel = (s) => {
-  const map = { NOT_STARTED: '未开始', IN_DEVELOPMENT: '开发中', TESTING: '已提测', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[s] || s
-}
+// Budget helpers: migrated to dictStore (BUDGET_STATUS)
 
-// Budget helpers
-const budgetStatusTagType = (s) => {
-  const map = { DRAFT: 'info', PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }
-  return map[s] || 'info'
-}
-const budgetStatusLabel = (s) => {
-  const map = { DRAFT: '草稿', PENDING: '审批中', APPROVED: '已审批', REJECTED: '已驳回' }
-  return map[s] || s
-}
-
-// Deliverable helpers
-const deliverableStatusTagType = (s) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', DELIVERED: '', REJECTED: 'danger' }
-  return map[s] || 'info'
-}
-const deliverableStatusLabel = (s) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', DELIVERED: '已交付', REJECTED: '已驳回' }
-  return map[s] || s
-}
+// Deliverable helpers: migrated to dictStore (DELIVERABLE_STATUS)
+// WBS helpers: migrated to dictStore (WBS_ELEMENT_STATUS)
 
 const countActiveAttachments = (attachments) => {
   if (!attachments) return 0
@@ -803,15 +781,7 @@ const categoryLabel = (cat) => {
   return map[cat] || cat
 }
 
-const statusTagType = (status) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', REJECTED: 'danger', CLOSED: '' }
-  return map[status] || 'info'
-}
-
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
-  return map[status] || status
-}
+// Charter status: migrated to dictStore (CHARTER_STATUS)
 
 const formatObjectives = (val) => {
   if (!val) return '-'
@@ -831,15 +801,7 @@ const formatStakeholders = (val) => {
   } catch { return val }
 }
 
-const progressTagType = (progress) => {
-  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
-  return map[progress] || 'info'
-}
-
-const progressLabel = (progress) => {
-  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[progress] || progress
-}
+// Charter progress: migrated to dictStore (CHARTER_PROGRESS)
 
 const loadDetail = async () => {
   loading.value = true

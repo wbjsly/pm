@@ -139,7 +139,7 @@ public class WhPmBudgetBo {
         WhPmBudget budget = new WhPmBudget();
         budget.setBudgetCode(sequenceService.generateCode("PM_BUDGET", "BUDGET-"));
         budget.setProjectId(req.getProjectId());
-        budget.setVersion("v0.1");
+        budget.setVersion("v0.5");
         budget.setCostBaseline("0");
         budget.setTotalBudget("0");
         budget.setManagementReserve(req.getManagementReserve() != null ? req.getManagementReserve() : "0");
@@ -179,6 +179,62 @@ public class WhPmBudgetBo {
         }
 
         recalculateTotals(budget);
+    }
+
+    @Transactional
+    public WhPmBudget upgradeCreate(String id, BudgetUpdateRequest req) {
+        WhPmBudget original = getById(id);
+        if (!"APPROVED".equals(original.getStatus())) {
+            throw new ServiceException("只有已审批通过的预算可以升级");
+        }
+
+        // Create new budget with upgrade draft version (x.0 -> x.5)
+        String upgradeDraftVersion = toUpgradeDraftVersion(original.getVersion());
+        WhPmBudget budget = new WhPmBudget();
+        budget.setBudgetCode(sequenceService.generateCode("PM_BUDGET", "BUDGET-"));
+        budget.setProjectId(original.getProjectId());
+        budget.setVersion(upgradeDraftVersion);
+        budget.setCostBaseline("0");
+        budget.setTotalBudget("0");
+        budget.setManagementReserve(req.getManagementReserve() != null ? req.getManagementReserve() : original.getManagementReserve());
+        budget.setStatus("DRAFT");
+        budget.setDelFlag("0");
+        budget.setVerNo(0);
+        budgetDao.insert(budget);
+
+        if (req.getItems() != null && !req.getItems().isEmpty()) {
+            createBudgetItems(budget.getId(), req.getItems());
+        }
+
+        recalculateTotals(budget);
+
+        log.info("Budget {} created as upgrade draft from {} version {}", budget.getId(), original.getVersion(), budget.getVersion());
+        return budget;
+    }
+
+    @Transactional
+    public void upgradeSubmit(String id) {
+        WhPmBudget budget = getById(id);
+        if (!"DRAFT".equals(budget.getStatus())) {
+            throw new ServiceException("只有草稿状态的预算可以提交");
+        }
+
+        // Update version (x.5 -> x.7) and status before starting approval
+        budget.setVersion(nextDraftVersion(budget.getVersion()));
+        budget.setStatus("PENDING");
+        budgetDao.updateById(budget);
+
+        String approverId = getApproverId(budget);
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("flowCode", "PM_BUDGET_APPROVAL");
+        variables.put("bizId", id);
+        variables.put("approverId", approverId);
+        org.flowable.engine.runtime.ProcessInstance instance = runtimeService.startProcessInstanceByKey(
+                "PM_BUDGET_APPROVAL", id, variables);
+        budget.setProcessInstanceId(instance.getId());
+        budgetDao.updateById(budget);
+
+        log.info("Budget {} upgrade submitted, process: {}", id, instance.getId());
     }
 
     @Transactional
@@ -547,9 +603,16 @@ public class WhPmBudgetBo {
                 || "OTHER".equals(category);
     }
 
+    private String toUpgradeDraftVersion(String currentVersion) {
+        // x.0 -> x.5
+        String[] parts = currentVersion.substring(1).split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        return "v" + major + ".5";
+    }
+
     private String nextDraftVersion(String currentVersion) {
-        // x.1 -> x.7
-        if (currentVersion.endsWith(".1")) {
+        // x.5 -> x.7
+        if (currentVersion.endsWith(".5")) {
             String prefix = currentVersion.substring(0, currentVersion.length() - 2);
             return prefix + ".7";
         }

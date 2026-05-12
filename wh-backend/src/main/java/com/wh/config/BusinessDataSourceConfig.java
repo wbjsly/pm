@@ -52,6 +52,10 @@ public class BusinessDataSourceConfig {
         ds.setTestOnReturn(false);
         ds.setPoolPreparedStatements(true);
         ds.setMaxPoolPreparedStatementPerConnectionSize(20);
+        // SQLite busy timeout for lock contention
+        ds.setConnectionInitSqls(java.util.Collections.singletonList(
+            "PRAGMA busy_timeout=5000"
+        ));
         try {
             ds.init();
         } catch (SQLException e) {

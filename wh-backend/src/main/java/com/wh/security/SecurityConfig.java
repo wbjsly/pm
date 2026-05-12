@@ -2,6 +2,7 @@ package com.wh.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -34,6 +35,10 @@ public class SecurityConfig {
             .authorizeRequests()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/system/dict/all", "/api/system/dict/items/**", "/api/system/dict/types").authenticated()
+                .antMatchers(HttpMethod.POST, "/api/system/dict/**").hasRole("ADMIN")
+                .antMatchers(HttpMethod.PUT, "/api/system/dict/**").hasRole("ADMIN")
+                .antMatchers(HttpMethod.DELETE, "/api/system/dict/**").hasRole("ADMIN")
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             .and()

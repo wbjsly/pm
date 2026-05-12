@@ -8,7 +8,14 @@
 
         <startEvent id="start" name="开始"/>
 
-        <sequenceFlow id="flow1" sourceRef="start" targetRef="sponsorApproval"/>
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="submitConfirm"/>
+
+        <userTask id="submitConfirm" name="提交确认"
+                  flowable:assignee="${submitter}">
+            <documentation>提交人确认提交</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow2" sourceRef="submitConfirm" targetRef="sponsorApproval"/>
 
         <userTask id="sponsorApproval" name="发起人审批"
                   flowable:candidateGroups="ROLE_SPONSOR"
@@ -16,7 +23,7 @@
             <documentation>项目章程审批</documentation>
         </userTask>
 
-        <sequenceFlow id="flow2" sourceRef="sponsorApproval" targetRef="gateway"/>
+        <sequenceFlow id="flow3" sourceRef="sponsorApproval" targetRef="gateway"/>
 
         <exclusiveGateway id="gateway" name="审批决策"/>
 

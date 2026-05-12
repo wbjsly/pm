@@ -31,7 +31,7 @@
             <div class="day-header">
               <span class="day-left">
                 <span class="day-number">{{ day.date }}</span>
-                <span v-if="!day.otherMonth && day.dayType" class="day-type-badge">{{ dayTypeLabel(day.dayType) }}</span>
+                <span v-if="!day.otherMonth && day.dayType" class="day-type-badge">{{ dictStore.getLabel('CALENDAR_DAY_TYPE', day.dayType) }}</span>
                 <span v-if="day.holidayName" class="holiday-badge">{{ day.holidayName }}</span>
               </span>
               <span v-if="!day.otherMonth && dayTotal(day) > 0" class="day-hours">{{ dayTotal(day) }}h</span>
@@ -95,6 +95,9 @@ import {
   resubmitWorkHourApi,
   getWorkHoursStatsApi
 } from '@/api/pm/workHours'
+import { useDictStore } from '@/store/dict'
+
+const dictStore = useDictStore()
 
 const props = defineProps({
   year: { type: Number, required: true },
@@ -108,10 +111,7 @@ const emit = defineEmits(['add', 'edit', 'resubmit', 'delete', 'month-change'])
 
 const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
-function dayTypeLabel(type) {
-  const map = { WORKDAY: '工', WEEKEND: '休', HOLIDAY: '假' }
-  return map[type] || ''
-}
+// Calendar dayType: migrated to dictStore (CALENDAR_DAY_TYPE)
 
 const stats = ref(null)
 const monthTotal = computed(() => {

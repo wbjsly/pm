@@ -24,7 +24,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="成果物编号">{{ deliverable.deliverableCode }}</el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag :type="statusTagType(deliverable.status)">{{ statusLabel(deliverable.status) }}</el-tag>
+          <el-tag :type="dictStore.getTagType('DELIVERABLE_STATUS', deliverable.status)">{{ dictStore.getLabel('DELIVERABLE_STATUS', deliverable.status) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="名称">{{ deliverable.name }}</el-descriptions-item>
         <el-descriptions-item label="所属项目">{{ projectName }}</el-descriptions-item>
@@ -73,9 +73,12 @@ import { getCharterDetailApi } from '@/api/pm/charter'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Select, Close, Checked, Document } from '@element-plus/icons-vue'
 
+import { useDictStore } from '@/store/dict'
+
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const dictStore = useDictStore()
 
 const roles = computed(() => userStore.userInfo?.roles || [])
 const isPm = computed(() => roles.value.some(r => r.toLowerCase().includes('role_pm')))
@@ -87,14 +90,7 @@ const projectName = ref('')
 const projectShortName = ref('')
 const loading = ref(false)
 
-const statusTagType = (status) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', DELIVERED: '', REJECTED: 'danger' }
-  return map[status] || 'info'
-}
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', DELIVERED: '已交付', REJECTED: '已驳回' }
-  return map[status] || status
-}
+// Deliverable status: migrated to dictStore (DELIVERABLE_STATUS)
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '-'

@@ -21,13 +21,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 4175,
-    headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
-    },
+    port: 4185,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8090',
         changeOrigin: true,
       },
     },

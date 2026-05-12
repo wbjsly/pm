@@ -24,6 +24,10 @@ export function deleteBudgetApi(id) {
   return request.delete(`/pm/budgets/${id}`)
 }
 
+export function upgradeBudgetApi(id, data) {
+  return request.post(`/pm/budgets/${id}/upgrade`, data)
+}
+
 export function submitBudgetApi(id) {
   return request.post(`/pm/budgets/${id}/submit`)
 }

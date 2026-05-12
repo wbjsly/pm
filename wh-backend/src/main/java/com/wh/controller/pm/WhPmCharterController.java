@@ -64,7 +64,7 @@ public class WhPmCharterController {
         return R.ok();
     }
 
-    @GetMapping("/{id}/reject")
+    @PostMapping("/{id}/reject")
     public R<Void> reject(@PathVariable String id, @RequestBody CharterSubmitRequest req) {
         charterBo.reject(id, req.getRejectReason());
         return R.ok();

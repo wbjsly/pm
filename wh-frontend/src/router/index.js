@@ -130,6 +130,12 @@ const routes = [
         meta: { title: '查看预算', hidden: true }
       },
       {
+        path: '/pm/budget/upgrade/:id',
+        name: 'BudgetUpgrade',
+        component: () => import('@/views/pm/budget/upgrade.vue'),
+        meta: { title: '升级预算', hidden: true }
+      },
+      {
         path: '/pm/budget/comparison/:projectId',
         name: 'BudgetComparison',
         component: () => import('@/views/pm/budget/comparison.vue'),
@@ -158,6 +164,12 @@ const routes = [
         name: 'CostQuota',
         component: () => import('@/views/system/cost-quota/index.vue'),
         meta: { title: '成本定额', group: '系统管理', perm: 'ROLE_ADMIN,ROLE_PM' }
+      },
+      {
+        path: '/system/dict',
+        name: 'DictList',
+        component: () => import('@/views/system/dict/index.vue'),
+        meta: { title: '字典管理', group: '系统管理', perm: 'ROLE_ADMIN' }
       },
       {
         path: '/system/user',
@@ -213,6 +225,12 @@ router.beforeEach(async (to, from, next) => {
       next({ path: '/login' })
       return
     }
+  }
+
+  // Load dictionary data on first navigation after login
+  const dictStore = (await import('@/store/dict')).useDictStore()
+  if (!dictStore.loaded) {
+    dictStore.loadAll().catch(() => {})
   }
 
   // Add tab

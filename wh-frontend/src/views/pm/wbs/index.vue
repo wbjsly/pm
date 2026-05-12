@@ -6,11 +6,7 @@
           <span style="font-weight: bold; font-size: 16px;">任务管理</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-select v-model="progressFilter" multiple collapse-tags collapse-tags-tooltip placeholder="项目进度" clearable style="width: 180px">
-              <el-option label="进行中" value="IN_PROGRESS" />
-              <el-option label="已验收" value="ACCEPTED" />
-              <el-option label="已完成" value="COMPLETED" />
-              <el-option label="已暂停" value="SUSPENDED" />
-              <el-option label="已取消" value="CANCELLED" />
+              <el-option v-for="item in dictStore.getDictItems('CHARTER_PROGRESS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
             </el-select>
             <el-input v-model="keyword" placeholder="搜索任务编码/名称" clearable style="width: 180px" @keyup.enter="loadProjects" />
             <el-button type="primary" @click="loadProjects">查询</el-button>
@@ -28,7 +24,7 @@
           </el-icon>
           <span style="font-weight: bold; margin-right: 24px; font-size: 12px;">{{ project.projectName }}<template v-if="project.projectShortName">（{{ project.projectShortName }}）</template></span>
           <el-tag size="small">{{ project.charterCode }}</el-tag>
-          <el-tag size="small" :type="progressTagType(project.progress)" style="margin-left: 16px;">{{ progressLabel(project.progress) }}</el-tag>
+          <el-tag size="small" :type="dictStore.getTagType('CHARTER_PROGRESS', project.progress)" style="margin-left: 16px;">{{ dictStore.getLabel('CHARTER_PROGRESS', project.progress) }}</el-tag>
           <span v-if="project.pmName" style="margin-left: 24px; color: #666; font-size: 12px;">PM: {{ project.pmName }}</span>
           <span v-if="project.wbsTotalEffort != null" style="margin-left: 24px; color: #666; font-size: 12px;">工时: {{ project.wbsTotalEffort }}h</span>
           <span v-if="project.wbsLatestEndDate" style="margin-left: 24px; color: #666; font-size: 12px;">最晚: {{ project.wbsLatestEndDate }}</span>
@@ -70,7 +66,7 @@
             </el-table-column>
             <el-table-column prop="status" label="状态" width="90">
               <template #default="{ row }">
-                <el-tag :type="wbsStatusTagType(row.status)" size="small">{{ wbsStatusLabel(row.status) }}</el-tag>
+                <el-tag :type="dictStore.getTagType('WBS_ELEMENT_STATUS', row.status)" size="small">{{ dictStore.getLabel('WBS_ELEMENT_STATUS', row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="latestPlannedEndDate" label="计划完成" width="110" />
@@ -160,8 +156,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, Delete, Plus, Upload, Download, ArrowRight, VideoPause, VideoPlay, RefreshRight, Promotion, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import ImportDialog from './ImportDialog.vue'
 
+import { useDictStore } from '@/store/dict'
+
 const route = useRoute()
 const router = useRouter()
+const dictStore = useDictStore()
 
 const projectList = ref([])
 const total = ref(0)
@@ -303,23 +302,10 @@ const handleTest = async (id) => {
   handleExpandProject(expandedProjectId.value)
 }
 
-// Status and tag helpers
-const statusTagType = (status) => {
-  const map = { DRAFT: 'info', PENDING_APPROVAL: 'warning', APPROVED: 'success', REJECTED: 'danger', CLOSED: '' }
-  return map[status] || 'info'
-}
-const statusLabel = (status) => {
-  const map = { DRAFT: '草稿', PENDING_APPROVAL: '审批中', APPROVED: '已通过', REJECTED: '已驳回', CLOSED: '已关闭' }
-  return map[status] || status
-}
-const wbsStatusTagType = (status) => {
-  const map = { NOT_STARTED: 'info', IN_DEVELOPMENT: 'warning', TESTING: 'primary', COMPLETED: 'success', SUSPENDED: 'danger', CANCELLED: 'info' }
-  return map[status] || 'info'
-}
-const wbsStatusLabel = (status) => {
-  const map = { NOT_STARTED: '未开始', IN_DEVELOPMENT: '开发中', TESTING: '已提测', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[status] || status
-}
+// Status helpers migrated to dictStore
+// CHARTER_STATUS, WBS_ELEMENT_STATUS, CHARTER_PROGRESS
+
+// Priority and difficulty: not yet in dict seed data, keep local maps
 const priorityTagType = (p) => {
   const map = { P0: 'danger', P1: 'danger', P2: 'warning', P3: '', P4: 'info', P5: 'info' }
   return map[p] || 'info'
@@ -334,14 +320,6 @@ const difficultyTagType = (d) => {
 const difficultyLabel = (d) => {
   const map = { HIGH: '高', MEDIUM: '中', LOW: '低' }
   return map[d] || d
-}
-const progressTagType = (progress) => {
-  const map = { IN_PROGRESS: 'warning', ACCEPTED: 'success', COMPLETED: '', SUSPENDED: 'info', CANCELLED: 'danger' }
-  return map[progress] || 'info'
-}
-const progressLabel = (progress) => {
-  const map = { IN_PROGRESS: '进行中', ACCEPTED: '已验收', COMPLETED: '已完成', SUSPENDED: '已暂停', CANCELLED: '已取消' }
-  return map[progress] || progress
 }
 
 // Check for refresh signal from form page

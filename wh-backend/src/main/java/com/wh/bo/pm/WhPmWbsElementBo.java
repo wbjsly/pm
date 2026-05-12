@@ -1,6 +1,7 @@
 package com.wh.bo.pm;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.wh.common.ServiceException;
 import com.wh.dao.pm.*;
 import com.wh.entity.pm.*;
@@ -328,6 +329,9 @@ public class WhPmWbsElementBo {
         }
         element.setStatus("NOT_STARTED");
         wbsDao.updateById(element);
+        wbsDao.update(null, new LambdaUpdateWrapper<WhPmWbsElement>()
+            .eq(WhPmWbsElement::getId, id)
+            .set(WhPmWbsElement::getActualEndDate, null));
     }
 
     @Transactional

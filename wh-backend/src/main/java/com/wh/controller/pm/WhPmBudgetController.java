@@ -60,6 +60,13 @@ public class WhPmBudgetController {
         return R.ok();
     }
 
+    @PostMapping("/{id}/upgrade")
+    public R<WhPmBudget> upgrade(@PathVariable String id, @RequestBody BudgetUpdateRequest req) {
+        WhPmBudget budget = budgetBo.upgradeCreate(id, req);
+        budgetBo.upgradeSubmit(budget.getId());
+        return R.ok(budget);
+    }
+
     @PostMapping("/{id}/submit")
     public R<Void> submit(@PathVariable String id) {
         budgetBo.submit(id);

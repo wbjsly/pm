@@ -50,7 +50,7 @@
               >
                 <template v-if="!day.otherMonth">
                   <span class="day-num">{{ day.date }}</span>
-                  <span class="day-type-tag">{{ typeLabel(day.type) }}</span>
+                  <span class="day-type-tag">{{ dictStore.getLabel('CALENDAR_DAY_TYPE', day.type) }}</span>
                   <span v-if="day.holidayName" class="holiday-name">{{ day.holidayName }}</span>
                 </template>
               </div>
@@ -97,7 +97,9 @@ import {
   generateWorkCalendarApi,
   updateWorkCalendarDayApi
 } from '@/api/system/workCalendar'
+import { useDictStore } from '@/store/dict'
 
+const dictStore = useDictStore()
 const selectedYear = ref(new Date().getFullYear())
 const yearOptions = computed(() => {
   const now = new Date().getFullYear()
@@ -109,10 +111,7 @@ const editVisible = ref(false)
 const editForm = ref({ date: '', dayType: 'WORKDAY', holidayName: '', standardHours: 8 })
 const calendarData = ref({})
 
-function typeLabel(type) {
-  const map = { WORKDAY: '工', WEEKEND: '休', HOLIDAY: '假' }
-  return map[type] || ''
-}
+// Calendar dayType: migrated to dictStore (CALENDAR_DAY_TYPE)
 
 function monthStatItems(month) {
   const weeks = getMonthWeeks(selectedYear.value, month)

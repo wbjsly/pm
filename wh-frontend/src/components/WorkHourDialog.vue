@@ -9,7 +9,7 @@
     <div v-if="isEdit" class="status-info">
       <div class="status-row">
         <span class="status-label">审批状态：</span>
-        <el-tag :type="statusTagType(editEntry.status)" size="default">{{ statusLabel(editEntry.status) }}</el-tag>
+        <el-tag :type="dictStore.getTagType('WORKLOG_STATUS', editEntry.status)" size="default">{{ dictStore.getLabel('WORKLOG_STATUS', editEntry.status) }}</el-tag>
       </div>
       <div v-if="editEntry.status === 'APPROVED' || editEntry.status === 'REJECTED'" class="status-row">
         <span class="status-label">审批人：</span>
@@ -44,7 +44,7 @@
       <div class="existing-title">当日已录工时:</div>
       <div v-for="entry in existingEntries" :key="entry.id" class="existing-item" :class="'status-' + entry.status.toLowerCase()">
         <span class="existing-project">{{ entry.projectShortName }}: {{ entry.hoursWorked }}h</span>
-        <span class="existing-status">{{ statusLabel(entry.status) }}</span>
+        <span class="existing-status">{{ dictStore.getLabel('WORKLOG_STATUS', entry.status) }}</span>
         <el-button v-if="entry.status === 'DRAFT' || entry.status === 'REJECTED'"
           link type="danger" size="small" @click="handleDelete(entry)">删除</el-button>
         <el-button v-if="entry.status === 'REJECTED'"
@@ -86,6 +86,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { createWorkHourApi, updateWorkHourApi, deleteWorkHourApi, resubmitWorkHourApi, getWorkHoursApi } from '@/api/pm/workHours'
 import { getCharterListApi } from '@/api/pm/charter'
 import { useUserStore } from '@/store/user'
+import { useDictStore } from '@/store/dict'
 
 const props = defineProps({
   dateStr: { type: String, default: '' },
@@ -98,6 +99,7 @@ const visible = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
 const userStore = useUserStore()
+const dictStore = useDictStore()
 const projects = ref([])
 const existingEntries = ref([])
 
@@ -123,15 +125,7 @@ const dailyTotal = computed(() => {
   return total.toFixed(1)
 })
 
-const statusLabel = (status) => {
-  const map = { DRAFT: '待审批', APPROVED: '已通过', REJECTED: '已驳回' }
-  return map[status] || status
-}
-
-const statusTagType = (status) => {
-  const map = { DRAFT: 'warning', APPROVED: 'success', REJECTED: 'danger' }
-  return map[status] || 'info'
-}
+// WorkLog status: migrated to dictStore (WORKLOG_STATUS)
 
 function open() {
   visible.value = true

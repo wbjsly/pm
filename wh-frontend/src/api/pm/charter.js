@@ -23,3 +23,11 @@ export function deleteCharterApi(id) {
 export function submitCharterApi(id) {
   return request.post(`/pm/charters/${id}/submit`)
 }
+
+export function approveCharterApi(id, data) {
+  return request.post(`/pm/charters/${id}/approve`, data)
+}
+
+export function rejectCharterApi(id, data) {
+  return request.post(`/pm/charters/${id}/reject`, data)
+}
