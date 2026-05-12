@@ -1,21 +1,17 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('WBS分解流程', () => {
+test.describe('WBS任务管理流程', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
   })
 
-  test('查看WBS列表', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/wbs')
-    await expect(page.locator('text=WBS').or(page.locator('text=任务'))).toBeVisible({ timeout: 5000 })
-  })
-
-  test('WBS详情页面加载', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/wbs/detail')
-    await expect(page.locator('text=WBS').or(page.locator('text=详情'))).toBeVisible({ timeout: 5000 })
+  test('导航到WBS任务页面', async ({ page }) => {
+    await page.goto('/pm/wbs')
+    await page.waitForTimeout(2000)
+    await expect(page.getByRole('tab', { name: '项目任务' })).toBeVisible({ timeout: 5000 })
   })
 })

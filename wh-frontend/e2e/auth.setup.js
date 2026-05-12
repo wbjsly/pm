@@ -3,7 +3,7 @@ import { test as setup, expect } from '@playwright/test'
 setup('authenticate', async ({ page }) => {
   await page.goto('/login')
   await page.fill('input[type="text"]', 'admin')
-  await page.fill('input[type="password"]', 'admin123')
-  await page.click('button:has-text("登录")')
-  await page.waitForURL('**/dashboard')
+  await page.getByPlaceholder('密码').fill('Admin@123')
+  await page.locator('button').filter({ hasText: '登录' }).click()
+  await page.waitForURL('**/pm/charter')
 })

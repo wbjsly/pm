@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('工时录入审批流程', () => {
+test.describe('工时管理流程', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
   })
 
-  test('录入工时并查看统计', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/work-hours')
-    await expect(page.locator('text=工时').or(page.locator('text=Work'))).toBeVisible({ timeout: 5000 })
+  test('导航到工时管理页面', async ({ page }) => {
+    await page.goto('/pm/work-hours')
+    await page.waitForTimeout(2000)
+    await expect(page.getByRole('tab', { name: '工时管理' })).toBeVisible({ timeout: 5000 })
   })
 })

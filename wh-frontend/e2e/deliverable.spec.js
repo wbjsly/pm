@@ -2,20 +2,16 @@ import { test, expect } from '@playwright/test'
 
 test.describe('交付物管理流程', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
   })
 
-  test('查看交付物列表', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/deliverables')
-    await expect(page.locator('text=交付物').or(page.locator('text=成果'))).toBeVisible({ timeout: 5000 })
-  })
-
-  test('交付物详情页面加载', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/deliverables/detail')
-    await expect(page.locator('text=交付物').or(page.locator('text=详情'))).toBeVisible({ timeout: 5000 })
+  test('导航到交付物管理页面', async ({ page }) => {
+    await page.goto('/pm/deliverable')
+    await page.waitForTimeout(2000)
+    await expect(page.getByRole('tab', { name: '成果管理' })).toBeVisible({ timeout: 5000 })
   })
 })

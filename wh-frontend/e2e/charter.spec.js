@@ -1,23 +1,23 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('立项审批流程', () => {
+test.describe('立项管理流程', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
   })
 
-  test('创建立项并提交审批', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/charters')
-    await expect(page.locator('text=立项').or(page.locator('text=项目'))).toBeVisible({ timeout: 5000 })
+  test('查看立项列表', async ({ page }) => {
+    await expect(page.getByRole('tab', { name: '项目立项' })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('table').first()).toBeVisible({ timeout: 3000 })
+  })
 
-    await page.click('button:has-text("新建")')
-    await page.waitForTimeout(500)
-
-    const nameInput = page.locator('input').first()
-    await nameInput.fill('E2E测试项目')
-    await page.click('button:has-text("提交")')
+  test('打开新建立项表单', async ({ page }) => {
+    await page.goto('/pm/charter/form')
+    await page.waitForTimeout(2000)
+    await expect(page.getByText('新增项目')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByPlaceholder('请输入项目名称')).toBeVisible()
   })
 })

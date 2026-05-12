@@ -2,20 +2,17 @@ import { test, expect } from '@playwright/test'
 
 test.describe('预算管理流程', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
   })
 
-  test('查看预算列表', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/budgets')
-    await expect(page.locator('text=预算')).toBeVisible({ timeout: 5000 })
-  })
-
-  test('预算编制页面加载', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/budgets/form')
-    await expect(page.locator('text=预算编制').or(page.locator('text=预算'))).toBeVisible({ timeout: 5000 })
+  test('导航到预算管理页面', async ({ page }) => {
+    await page.goto('/pm/budget')
+    await page.waitForTimeout(2000)
+    await expect(page.getByRole('tab', { name: '预算管理' })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('columnheader', { name: '预算编码' })).toBeVisible({ timeout: 3000 })
   })
 })

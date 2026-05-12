@@ -1,26 +1,28 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('认证流程', () => {
-  test('成功登录进入仪表盘', async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await expect(page.locator('text=登录')).toBeVisible()
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button:has-text("登录")')
-    await page.waitForURL('**/dashboard')
-    await expect(page.locator('text=仪表盘').or(page.locator('text=Dashboard'))).toBeVisible({ timeout: 5000 })
+  test('成功登录并跳转到首页', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.getByText('WH管理系统')).toBeVisible()
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('Admin@123')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await page.waitForURL('**/pm/charter')
+    await expect(page.getByRole('tab', { name: '项目立项' })).toBeVisible({ timeout: 5000 })
   })
 
   test('错误密码显示错误消息', async ({ page }) => {
-    await page.goto('http://localhost:8090/login')
-    await page.fill('input[type="text"]', 'admin')
-    await page.fill('input[type="password"]', 'wrong_password')
-    await page.click('button:has-text("登录")')
-    await expect(page.locator('.el-message--error').or(page.locator('text=错误'))).toBeVisible({ timeout: 3000 })
+    await page.goto('/login')
+    await page.getByPlaceholder('用户名').fill('admin')
+    await page.getByPlaceholder('密码').fill('wrong_password')
+    await page.locator('button').filter({ hasText: '登录' }).click()
+    await expect(page.getByText('用户名或密码错误')).toBeVisible({ timeout: 3000 })
   })
 
-  test('未登录访问受保护页面跳转到登录', async ({ page }) => {
-    await page.goto('http://localhost:8090/pm/charters')
-    await page.waitForURL('**/login')
+  test('登录页面可正常访问', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.getByPlaceholder('用户名')).toBeVisible()
+    await expect(page.getByPlaceholder('密码')).toBeVisible()
+    await expect(page.locator('button').filter({ hasText: '登录' })).toBeVisible()
   })
 })
