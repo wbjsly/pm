@@ -65,3 +65,4 @@ wh-frontend/.env.*
 *.swo
 
 .gstack/
+.worktrees/
