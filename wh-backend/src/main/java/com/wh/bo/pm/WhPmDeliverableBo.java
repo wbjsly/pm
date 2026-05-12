@@ -184,7 +184,6 @@ public class WhPmDeliverableBo {
 
     // ─── WORKFLOW METHODS ───
 
-    @Transactional
     public void submit(String id) {
         WhPmDeliverable deliverable = getById(id);
         if (!"DRAFT".equals(deliverable.getStatus()) && !"REJECTED".equals(deliverable.getStatus())) {
@@ -215,7 +214,6 @@ public class WhPmDeliverableBo {
         }
     }
 
-    @Transactional
     public void approve(String id, String comment) {
         WhPmDeliverable deliverable = getById(id);
         if (!"PENDING_APPROVAL".equals(deliverable.getStatus())) {
@@ -234,9 +232,12 @@ public class WhPmDeliverableBo {
         variables.put("approvalResult", "APPROVED");
         variables.put("comment", comment);
         taskService.complete(task.getId(), variables);
+
+        deliverable.setStatus("APPROVED");
+        deliverable.setApprovalComment(comment);
+        deliverableDao.updateById(deliverable);
     }
 
-    @Transactional
     public void reject(String id, String comment) {
         WhPmDeliverable deliverable = getById(id);
         if (!"PENDING_APPROVAL".equals(deliverable.getStatus())) {
@@ -255,6 +256,13 @@ public class WhPmDeliverableBo {
         variables.put("approvalResult", "REJECTED");
         variables.put("rejectReason", comment);
         taskService.complete(task.getId(), variables);
+
+        deliverable.setStatus("REJECTED");
+        deliverable.setApprovalComment(comment);
+        deliverableDao.updateById(deliverable);
+        deliverableDao.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<com.wh.entity.pm.WhPmDeliverable>()
+                .eq(com.wh.entity.pm.WhPmDeliverable::getId, deliverable.getId())
+                .set(com.wh.entity.pm.WhPmDeliverable::getProcessInstanceId, null));
     }
 
     @Transactional

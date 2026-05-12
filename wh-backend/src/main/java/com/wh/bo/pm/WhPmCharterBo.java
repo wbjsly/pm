@@ -228,7 +228,6 @@ public class WhPmCharterBo {
         charterDao.physicalDeleteById(id);
     }
 
-    @Transactional
     public void submit(String id) {
         WhPmCharter charter = getById(id);
         if (!"DRAFT".equals(charter.getStatus()) && !"REJECTED".equals(charter.getStatus())) {
@@ -261,7 +260,6 @@ public class WhPmCharterBo {
         }
     }
 
-    @Transactional
     public void approve(String id, String comment) {
         WhPmCharter charter = getById(id);
         if (!"PENDING_APPROVAL".equals(charter.getStatus())) {
@@ -279,9 +277,12 @@ public class WhPmCharterBo {
         variables.put("approvalResult", "APPROVED");
         variables.put("comment", comment);
         taskService.complete(task.getId(), variables);
+
+        charter.setStatus("APPROVED");
+        charter.setApprovalComment(comment);
+        charterDao.updateById(charter);
     }
 
-    @Transactional
     public void reject(String id, String comment) {
         WhPmCharter charter = getById(id);
         if (!"PENDING_APPROVAL".equals(charter.getStatus())) {
@@ -299,5 +300,12 @@ public class WhPmCharterBo {
         variables.put("approvalResult", "REJECTED");
         variables.put("rejectReason", comment);
         taskService.complete(task.getId(), variables);
+
+        charter.setStatus("REJECTED");
+        charter.setApprovalComment(comment);
+        charterDao.updateById(charter);
+        charterDao.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<com.wh.entity.pm.WhPmCharter>()
+                .eq(com.wh.entity.pm.WhPmCharter::getId, charter.getId())
+                .set(com.wh.entity.pm.WhPmCharter::getProcessInstanceId, null));
     }
 }

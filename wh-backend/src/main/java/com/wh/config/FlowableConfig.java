@@ -3,9 +3,11 @@ package com.wh.config;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
 import org.flowable.engine.*;
-import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
+import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.util.Date;
@@ -14,6 +16,7 @@ import java.util.Date;
  * Flowable shares the same SQLite database as business data.
  * Uses H2 dialect (closest to SQLite) with strong UUIDs to avoid sequence dependencies.
  * Custom initMybatisTypeHandlers registers SQLite-compatible TypeHandlers before XML parsing.
+ * Extends SpringProcessEngineConfiguration to support Spring bean resolution in delegate expressions.
  */
 @org.springframework.context.annotation.Configuration
 public class FlowableConfig {
@@ -22,7 +25,7 @@ public class FlowableConfig {
      * Custom ProcessEngineConfiguration that registers SQLite-compatible MyBatis TypeHandlers
      * during initMybatisTypeHandlers, which is called BEFORE XML mapper parsing.
      */
-    static class SqliteProcessEngineConfiguration extends StandaloneProcessEngineConfiguration {
+    static class SqliteProcessEngineConfiguration extends SpringProcessEngineConfiguration {
         @Override
         public void initMybatisTypeHandlers(Configuration configuration) {
             super.initMybatisTypeHandlers(configuration);
@@ -36,9 +39,13 @@ public class FlowableConfig {
     @Bean
     @DependsOn({"dataSource", "sqliteBootstrap"})
     public ProcessEngineConfiguration processEngineConfiguration(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource) {
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
+            ApplicationContext applicationContext,
+            PlatformTransactionManager transactionManager) {
         SqliteProcessEngineConfiguration config = new SqliteProcessEngineConfiguration();
         config.setDataSource(dataSource);
+        config.setApplicationContext(applicationContext);
+        config.setTransactionManager(transactionManager);
         config.setDatabaseType("h2");
         config.setIdGenerator(new UuidIdGenerator());
         config.setDatabaseSchemaUpdate("false");

@@ -212,17 +212,14 @@ public class WhPmBudgetBo {
         return budget;
     }
 
-    @Transactional
     public void upgradeSubmit(String id) {
         WhPmBudget budget = getById(id);
         if (!"DRAFT".equals(budget.getStatus())) {
             throw new ServiceException("只有草稿状态的预算可以提交");
         }
 
-        // Update version (x.5 -> x.7) and status before starting approval
         budget.setVersion(nextDraftVersion(budget.getVersion()));
         budget.setStatus("PENDING");
-        budgetDao.updateById(budget);
 
         String approverId = getApproverId(budget);
         Map<String, Object> variables = new HashMap<>();
@@ -248,21 +245,16 @@ public class WhPmBudgetBo {
         budgetDao.physicalDeleteById(id);
     }
 
-    @Transactional
     public void submit(String id) {
         WhPmBudget budget = getById(id);
         if (!"DRAFT".equals(budget.getStatus())) {
             throw new ServiceException("只有草稿状态的预算可以提交审批");
         }
 
-        // Update version and status
         budget.setVersion(nextDraftVersion(budget.getVersion()));
         budget.setStatus("PENDING");
-        budgetDao.updateById(budget);
 
-        // Start Flowable process
         String approverId = getApproverId(budget);
-
         Map<String, Object> variables = new HashMap<>();
         variables.put("flowCode", "PM_BUDGET_APPROVAL");
         variables.put("bizId", id);
@@ -277,7 +269,6 @@ public class WhPmBudgetBo {
         log.info("Budget {} submitted for approval, process: {}", id, instance.getId());
     }
 
-    @Transactional
     public void approve(String id, String comment) {
         WhPmBudget budget = getById(id);
         if (!"PENDING".equals(budget.getStatus())) {
@@ -295,9 +286,17 @@ public class WhPmBudgetBo {
         variables.put("approvalResult", "APPROVED");
         variables.put("comment", comment);
         taskService.complete(task.getId(), variables);
+
+        // x.7 -> (x+1).0
+        String currentVersion = budget.getVersion();
+        String[] parts = currentVersion.substring(1).split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        budget.setVersion("v" + (major + 1) + ".0");
+        budget.setStatus("APPROVED");
+        budget.setApprovalComment(comment);
+        budgetDao.updateById(budget);
     }
 
-    @Transactional
     public void reject(String id, String comment) {
         WhPmBudget budget = getById(id);
         if (!"PENDING".equals(budget.getStatus())) {
@@ -315,6 +314,17 @@ public class WhPmBudgetBo {
         variables.put("approvalResult", "REJECTED");
         variables.put("rejectReason", comment);
         taskService.complete(task.getId(), variables);
+
+        // x.7 -> x.5
+        String currentVersion = budget.getVersion();
+        String[] parts = currentVersion.substring(1).split("\\.");
+        budget.setVersion("v" + parts[0] + ".5");
+        budget.setStatus("DRAFT");
+        budget.setApprovalComment(comment);
+        budgetDao.updateById(budget);
+        budgetDao.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<com.wh.entity.pm.WhPmBudget>()
+                .eq(com.wh.entity.pm.WhPmBudget::getId, budget.getId())
+                .set(com.wh.entity.pm.WhPmBudget::getProcessInstanceId, null));
     }
 
     @Transactional
