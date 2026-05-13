@@ -9,37 +9,61 @@
       </template>
 
       <el-form :model="form" :rules="rules" ref="formRef" label-width="120px" v-loading="loading">
-        <el-form-item label="账号">
-          <span>{{ form.username }}</span>
-        </el-form-item>
-        <el-form-item label="昵称" prop="nickName">
-          <el-input v-model="form.nickName" placeholder="请输入昵称" />
-        </el-form-item>
-        <el-form-item label="真实姓名" prop="realName">
-          <el-input v-model="form.realName" placeholder="请输入真实姓名" />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="手机" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio label="1">启用</el-radio>
-            <el-radio label="0">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="角色" prop="roleIds">
-          <el-select v-model="form.roleIds" multiple filterable placeholder="请选择角色" style="width: 100%">
-            <el-option v-for="role in allRoles" :key="role.id" :label="role.roleName" :value="role.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="成本岗位" prop="positionId">
-          <el-select v-model="form.positionId" filterable placeholder="请选择成本岗位" style="width: 100%">
-            <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
-          </el-select>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="账号">
+              <span>{{ form.username }}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio label="1">启用</el-radio>
+                <el-radio label="0">禁用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="真实姓名" prop="realName">
+              <el-input v-model="form.realName" placeholder="请输入真实姓名" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="昵称" prop="nickName">
+              <el-input v-model="form.nickName" placeholder="请输入昵称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="form.email" placeholder="请输入邮箱" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机" prop="phone">
+              <el-input v-model="form.phone" placeholder="请输入手机号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="角色" prop="roleIds">
+              <el-select v-model="form.roleIds" multiple filterable placeholder="请选择角色" style="width: 100%">
+                <el-option v-for="role in allRoles" :key="role.id" :label="role.roleName" :value="role.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="成本岗位" prop="positionId">
+              <el-select v-model="form.positionId" filterable placeholder="请选择成本岗位" style="width: 100%">
+                <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
           <el-button @click="handleBack">取消</el-button>

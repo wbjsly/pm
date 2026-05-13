@@ -84,7 +84,7 @@ const menuItems = [
   { path: '/pm/budget', title: '预算管理', group: '项目管理', icon: 'Money', perm: 'ROLE_PM' },
   { path: '/pm/work-hours', title: '工时管理', group: '项目管理', icon: 'Clock', perm: 'ROLE_PM' },
   { path: '/pm/deliverable', title: '成果管理', group: '项目管理', icon: 'Folder', perm: 'ROLE_PM,ROLE_SPONSOR' },
-  { path: '/pm/product', title: '产品清单', group: '产品管理', icon: 'Tickets', perm: 'ROLE_PM' },
+  { path: '/pm/product', title: '产品清单', group: '系统管理', icon: 'Tickets', perm: 'ROLE_PM' },
   { path: '/system/user', title: '用户管理', group: '系统管理', icon: 'User', perm: 'ROLE_ADMIN' },
   { path: '/system/calendar', title: '工作日历', group: '系统管理', icon: 'Calendar', perm: 'ROLE_ADMIN' },
   { path: '/system/cost-quota', title: '成本定额', group: '系统管理', icon: 'Money', perm: 'ROLE_ADMIN,ROLE_PM' },

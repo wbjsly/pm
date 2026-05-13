@@ -112,9 +112,9 @@
           <el-date-picker v-model="form.versionReleaseDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" style="width: 100%">
-            <el-option v-for="item in dictStore.getDictItems('PRODUCT_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
-          </el-select>
+          <el-radio-group v-model="form.status">
+            <el-radio v-for="item in dictStore.getDictItems('PRODUCT_STATUS')" :key="item.itemCode" :label="item.itemCode">{{ item.label }}</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
@@ -142,9 +142,9 @@
           <el-date-picker v-model="moduleForm.versionReleaseDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-select v-model="moduleForm.status" style="width: 100%">
-            <el-option v-for="item in dictStore.getDictItems('MODULE_STATUS')" :key="item.itemCode" :label="item.label" :value="item.itemCode" />
-          </el-select>
+          <el-radio-group v-model="moduleForm.status">
+            <el-radio v-for="item in dictStore.getDictItems('MODULE_STATUS')" :key="item.itemCode" :label="item.itemCode">{{ item.label }}</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="moduleForm.description" type="textarea" :rows="3" placeholder="请输入描述" />

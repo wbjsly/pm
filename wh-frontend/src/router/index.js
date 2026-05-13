@@ -77,7 +77,7 @@ const routes = [
         path: '/pm/product',
         name: 'ProductList',
         component: () => import('@/views/pm/product/index.vue'),
-        meta: { title: '产品管理', group: '项目管理', perm: 'ROLE_PM' }
+        meta: { title: '产品清单', group: '系统管理', perm: 'ROLE_PM' }
       },
       // Deliverable Management routes
       {
