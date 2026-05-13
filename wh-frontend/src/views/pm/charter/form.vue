@@ -19,26 +19,32 @@
 
         <!-- Step 1: Basic Info -->
         <div v-show="currentStep === 0">
-          <el-form-item label="项目名称" prop="projectName">
-            <el-input v-model="form.projectName" placeholder="请输入项目名称" />
-          </el-form-item>
           <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="项目名称" prop="projectName">
+                <el-input v-model="form.projectName" placeholder="请输入项目名称" />
+              </el-form-item>
+            </el-col>
             <el-col :span="12">
               <el-form-item label="项目简称" prop="projectShortName">
                 <el-input v-model="form.projectShortName" placeholder="请输入项目简称" />
               </el-form-item>
             </el-col>
+          </el-row>
+          <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="项目编号" prop="projectCode">
                 <el-input v-model="form.projectCode" placeholder="自动生成或手动输入" />
               </el-form-item>
             </el-col>
+            <el-col :span="12">
+              <el-form-item label="预算上限" prop="budgetCap">
+                <el-input v-model="form.budgetCap" placeholder="如：5000000">
+                  <template #append>元人民币</template>
+                </el-input>
+              </el-form-item>
+            </el-col>
           </el-row>
-          <el-form-item label="预算上限" prop="budgetCap">
-            <el-input v-model="form.budgetCap" placeholder="如：5000000">
-              <template #append>元人民币</template>
-            </el-input>
-          </el-form-item>
           <el-form-item label="项目描述" prop="description">
             <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入项目描述" />
           </el-form-item>

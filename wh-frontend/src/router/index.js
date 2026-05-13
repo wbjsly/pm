@@ -172,6 +172,12 @@ const routes = [
         meta: { title: '字典管理', group: '系统管理', perm: 'ROLE_ADMIN' }
       },
       {
+        path: '/system/menu',
+        name: 'MenuManagement',
+        component: () => import('@/views/system/menu/index.vue'),
+        meta: { title: '菜单管理', group: '系统管理', perm: 'ROLE_ADMIN' }
+      },
+      {
         path: '/system/user',
         name: 'UserList',
         component: () => import('@/views/system/user/index.vue'),
@@ -231,6 +237,12 @@ router.beforeEach(async (to, from, next) => {
   const dictStore = (await import('@/store/dict')).useDictStore()
   if (!dictStore.loaded) {
     dictStore.loadAll().catch(() => {})
+  }
+
+  // Load menu data after user info is available
+  const menuStore = (await import('@/store/menu')).useMenuStore()
+  if (!menuStore.loaded && !menuStore.loading) {
+    menuStore.fetchMenus().catch(() => {})
   }
 
   // Add tab

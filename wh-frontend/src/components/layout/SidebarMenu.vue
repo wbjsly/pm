@@ -28,26 +28,26 @@
       text-color="#bfcbd9"
       active-text-color="#409EFF"
     >
-      <el-menu-item index="/dashboard">
-        <el-icon><component :is="'HomeFilled'" /></el-icon>
-        <span>主页</span>
-      </el-menu-item>
-      <template v-for="group in filteredGroups" :key="group.name">
-        <el-sub-menu v-if="group.children.length" :index="group.name">
+      <template v-for="item in filteredTree" :key="item.id">
+        <el-menu-item v-if="!item.children || item.children.length === 0" :index="item.path">
+          <el-icon><component :is="item.icon || 'Folder'" /></el-icon>
+          <span>{{ item.title }}</span>
+        </el-menu-item>
+        <el-sub-menu v-else :index="item.id">
           <template #title>
-            <el-icon><component :is="group.icon || 'Folder'" /></el-icon>
-            <span>{{ group.name }}</span>
+            <el-icon><component :is="item.icon || 'Folder'" /></el-icon>
+            <span>{{ item.title }}</span>
           </template>
           <el-menu-item
-            v-for="item in group.children"
-            :key="item.path"
-            :index="item.path"
+            v-for="child in item.children"
+            :key="child.path"
+            :index="child.path"
           >
-            {{ item.title }}
+            {{ child.title }}
           </el-menu-item>
         </el-sub-menu>
       </template>
-      <div v-if="filteredGroups.length === 0 && !props.collapsed" class="no-result">无匹配菜单</div>
+      <div v-if="filteredTree.length === 0 && !props.collapsed" class="no-result">无匹配菜单</div>
     </el-menu>
   </div>
 </template>
@@ -56,10 +56,12 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { useMenuStore } from '@/store/menu'
 import { Search, Fold, Expand } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const userStore = useUserStore()
+const menuStore = useMenuStore()
 
 const props = defineProps({
   collapsed: { type: Boolean, default: false }
@@ -78,48 +80,64 @@ const activeMenu = computed(() => {
   return r?.path || route.path
 })
 
-const menuItems = [
-  { path: '/pm/charter', title: '项目立项', group: '项目管理', icon: 'Document', perm: 'ROLE_PM' },
-  { path: '/pm/wbs', title: '项目任务', group: '项目管理', icon: 'List', perm: 'ROLE_PM' },
-  { path: '/pm/budget', title: '预算管理', group: '项目管理', icon: 'Money', perm: 'ROLE_PM' },
-  { path: '/pm/work-hours', title: '工时管理', group: '项目管理', icon: 'Clock', perm: 'ROLE_PM' },
-  { path: '/pm/deliverable', title: '成果管理', group: '项目管理', icon: 'Folder', perm: 'ROLE_PM,ROLE_SPONSOR' },
-  { path: '/pm/product', title: '产品清单', group: '系统管理', icon: 'Tickets', perm: 'ROLE_PM' },
-  { path: '/system/user', title: '用户管理', group: '系统管理', icon: 'User', perm: 'ROLE_ADMIN' },
-  { path: '/system/calendar', title: '工作日历', group: '系统管理', icon: 'Calendar', perm: 'ROLE_ADMIN' },
-  { path: '/system/cost-quota', title: '成本定额', group: '系统管理', icon: 'Money', perm: 'ROLE_ADMIN,ROLE_PM' },
-]
+const menuItems = computed(() => menuStore.menuItems)
 
 const visibleItems = computed(() => {
   const roles = userStore.userInfo?.roles || []
   const isAdmin = roles.includes('ROLE_ADMIN')
-  return menuItems.filter(item => {
-    if (item.hidden) return false
-    if (!isAdmin && item.perm) {
-      const permCodes = item.perm.toLowerCase().replace('role_', '').split(',')
-      if (!permCodes.some(p => roles.some(r => r.toLowerCase().includes(p.trim())))) return false
-    }
-    return true
+  return menuItems.value.filter(item => {
+    if (!item.perm) return true
+    if (isAdmin) return true
+    const perms = item.perm.split(',').map(p => p.trim())
+    return perms.some(p => roles.some(r => r.toUpperCase() === p.toUpperCase()))
   })
 })
 
-const menuGroups = computed(() => {
-  const groups = {}
-  for (const item of visibleItems.value) {
-    const g = item.group || '其他'
-    if (!groups[g]) groups[g] = { name: g, icon: item.icon, children: [] }
-    groups[g].children.push({ path: item.path, title: item.title })
-  }
-  return Object.values(groups)
+const treeMenu = computed(() => {
+  const items = visibleItems.value
+  const map = {}
+  const roots = []
+
+  items.forEach(item => {
+    map[item.id] = { ...item, children: [] }
+  })
+
+  items.forEach(item => {
+    const node = map[item.id]
+    if (item.parentId && map[item.parentId]) {
+      map[item.parentId].children.push(node)
+    } else {
+      roots.push(node)
+    }
+  })
+
+  roots.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  roots.forEach(root => {
+    if (root.children) {
+      root.children.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    }
+  })
+
+  return roots
 })
 
-const filteredGroups = computed(() => {
-  if (!searchText.value) return menuGroups.value
+const filteredTree = computed(() => {
+  if (!searchText.value) return treeMenu.value
   const keyword = searchText.value.toLowerCase()
-  return menuGroups.value.map(group => ({
-    ...group,
-    children: group.children.filter(item => item.title.toLowerCase().includes(keyword))
-  })).filter(group => group.children.length > 0)
+
+  const filterNode = (nodes) => {
+    return nodes.reduce((acc, node) => {
+      const titleMatch = node.title.toLowerCase().includes(keyword)
+      const filteredChildren = node.children ? filterNode(node.children) : []
+
+      if (titleMatch || filteredChildren.length > 0) {
+        acc.push({ ...node, children: filteredChildren })
+      }
+      return acc
+    }, [])
+  }
+
+  return filterNode(treeMenu.value)
 })
 </script>
 
