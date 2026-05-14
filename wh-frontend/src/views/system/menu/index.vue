@@ -53,7 +53,14 @@
 
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item v-if="form.parentId" label="上级菜单">
-          <el-input :model-value="parentTitle" disabled />
+          <el-select v-model="form.parentId" style="width: 100%;">
+            <el-option
+              v-for="p in parentOptions"
+              :key="p.id"
+              :label="p.title"
+              :value="p.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="菜单名称" prop="title">
           <el-input v-model="form.title" placeholder="如：项目立项" />
@@ -135,9 +142,8 @@ const dialogTitle = computed(() => {
   return form.parentId ? '新增子菜单' : '新增菜单'
 })
 
-const parentTitle = computed(() => {
-  const parent = menuList.value.find(m => m.id === form.parentId)
-  return parent ? parent.title : ''
+const parentOptions = computed(() => {
+  return menuList.value.filter(m => !m.parentId && m.id !== editId.value)
 })
 
 const rules = {

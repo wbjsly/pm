@@ -8,101 +8,226 @@
         </div>
       </template>
 
-      <div class="split-panels">
-        <!-- LEFT: readonly view -->
-        <div class="left-panel">
-          <div class="panel-title">被升级预算（{{ originalVersion }}）</div>
-          <el-card shadow="never" class="panel-card">
-            <div class="info-section">
-              <el-row :gutter="16">
-                <el-col :span="12">
-                  <div class="info-item">
-                    <label>项目名称</label>
-                    <span class="info-value">{{ projectName }}</span>
-                  </div>
-                </el-col>
-                <el-col :span="12">
-                  <div class="info-item">
-                    <label>预算编码</label>
-                    <span class="info-value">{{ originalData.budget?.budgetCode || '' }}</span>
-                  </div>
-                </el-col>
-              </el-row>
-              <el-row :gutter="16">
-                <el-col :span="12">
-                  <div class="info-item">
-                    <label>版本号</label>
-                    <span class="info-value">{{ originalData.budget?.version || '' }}</span>
-                  </div>
-                </el-col>
-                <el-col :span="12">
-                  <div class="info-item">
-                    <label>状态</label>
-                    <el-tag :type="dictStore.getTagType('BUDGET_STATUS', originalData.budget?.status)">
-                      {{ dictStore.getLabel('BUDGET_STATUS', originalData.budget?.status) }}
-                    </el-tag>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
+      <!-- 1. 项目信息区 + 全局差异面板 -->
+      <div class="project-info-bar">
+        <div class="info-readonly">
+          <el-row :gutter="16">
+            <el-col :span="6">
+              <div class="info-item">
+                <label>项目名称</label>
+                <span class="info-value">{{ projectName }}</span>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="info-item">
+                <label>预算编码</label>
+                <span class="info-value">{{ originalData.budget?.budgetCode || '' }}</span>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="info-item">
+                <label>版本号</label>
+                <span class="info-value">{{ originalVersion }}</span>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="info-item">
+                <label>状态</label>
+                <el-tag :type="dictStore.getTagType('BUDGET_STATUS', originalData.budget?.status)">
+                  {{ dictStore.getLabel('BUDGET_STATUS', originalData.budget?.status) }}
+                </el-tag>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <div class="global-diff-panel">
+          <div class="diff-title">预算变更汇总</div>
+          <div class="diff-row">
+            <span>人工</span>
+            <span :style="diffStyle(diffData.labor.diff)">
+              {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
+            </span>
+          </div>
+          <div class="diff-row">
+            <span>采购</span>
+            <span :style="diffStyle(diffData.procurement.diff)">
+              {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
+            </span>
+          </div>
+          <div class="diff-row">
+            <span>其他</span>
+            <span :style="diffStyle(diffData.other.diff)">
+              {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
+            </span>
+          </div>
+          <div class="diff-row sub-total">
+            <span>科目差异合计</span>
+            <span :style="diffStyle(diffData.subTotal.diff)">
+              {{ diffSign(diffData.subTotal.diff) }}¥{{ formatMoney(Math.abs(diffData.subTotal.diff)) }}
+            </span>
+          </div>
+          <el-divider style="margin: 6px 0" />
+          <div class="diff-row" v-if="Math.abs(diffData.managementReserve.diff) > 0.01">
+            <span>管理储备</span>
+            <span :style="diffStyle(diffData.managementReserve.diff)">
+              {{ diffSign(diffData.managementReserve.diff) }}¥{{ formatMoney(Math.abs(diffData.managementReserve.diff)) }}
+            </span>
+          </div>
+          <div class="diff-row total">
+            <span>总预算差异</span>
+            <span :style="diffStyle(diffData.total.diff)">
+              {{ diffSign(diffData.total.diff) }}¥{{ formatMoney(Math.abs(diffData.total.diff)) }}
+            </span>
+          </div>
+        </div>
+      </div>
 
-            <el-divider>预算科目</el-divider>
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
+        <el-divider>预算科目</el-divider>
 
-            <el-card class="category-card" shadow="never">
-              <template #header>
-                <div class="category-header">
-                  <span>人工</span>
-                  <span class="category-amount">合计：¥ {{ formatMoney(leftLaborTotal) }} 元人民币</span>
-                </div>
-              </template>
+        <!-- 2. 人工科目 -->
+        <div class="category-section">
+          <div class="section-header">
+            <span class="section-title">人工</span>
+            <span class="diff-badge" :style="diffStyle(diffData.labor.diff)">
+              {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
+              <span class="diff-percent">({{ diffSign(diffData.labor.percent) }}{{ Math.abs(diffData.labor.percent).toFixed(1) }}%)</span>
+            </span>
+          </div>
+          <div class="section-body">
+            <div class="section-left">
+              <div class="section-subtitle">原预算（{{ originalVersion }}）</div>
               <el-table :data="leftLaborItems" size="small">
                 <el-table-column label="岗位" width="140">
                   <template #default="{ row }">
                     <span>{{ row.positionName || roleLabel(row.roleCode) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="工时(小时)" width="140">
+                <el-table-column label="工时(小时)" width="120">
                   <template #default="{ row }">{{ row.hours }}</template>
                 </el-table-column>
-                <el-table-column label="成本定额(元/时)" width="160">
+                <el-table-column label="成本定额(元/时)" width="140">
                   <template #default="{ row }">{{ formatMoney(row.costRate) }}</template>
                 </el-table-column>
-                <el-table-column label="金额" width="160">
+                <el-table-column label="金额" width="140">
                   <template #default="{ row }">¥ {{ formatMoney(row.budgetAmount) }}</template>
                 </el-table-column>
               </el-table>
-            </el-card>
+              <div class="section-total">合计：¥ {{ formatMoney(leftLaborTotal) }} 元人民币</div>
+            </div>
+            <div class="section-right">
+              <div class="section-subtitle">编辑</div>
+              <el-table :data="form.items.LABOR" size="small">
+                <el-table-column label="岗位" width="140">
+                  <template #default="{ row }">
+                    <el-select v-model="row.positionId" size="small" filterable placeholder="请选择岗位"
+                      @change="handlePositionChange(row)">
+                      <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
+                    </el-select>
+                  </template>
+                </el-table-column>
+                <el-table-column label="工时(小时)" width="120">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.hours" :min="0" size="small" @change="calcLaborAmount(row)" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="成本定额(元/时)" width="140">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.costRate" :min="0" :precision="2" size="small" disabled
+                      :class="{ 'zero-rate': row.costRate === 0 }" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="金额" width="140">
+                  <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
+                </el-table-column>
+                <el-table-column label="操作" width="80">
+                  <template #default="{ $index }">
+                    <el-button link type="danger" size="small" @click="removeItem('LABOR', $index)"
+                      :disabled="form.items.LABOR.length <= 1">删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-button size="small" @click="addItem('LABOR')" style="margin-top: 8px">
+                <el-icon><Plus /></el-icon> 添加人员
+              </el-button>
+              <div class="section-total">合计：¥ {{ formatMoney(categoryTotal('LABOR')) }} 元人民币</div>
+            </div>
+          </div>
+        </div>
 
-            <el-card class="category-card" shadow="never">
-              <template #header>
-                <div class="category-header">
-                  <span>采购</span>
-                  <span class="category-amount">合计：¥ {{ formatMoney(leftProcurementTotal) }} 元人民币</span>
-                </div>
-              </template>
+        <!-- 3. 采购科目 -->
+        <div class="category-section">
+          <div class="section-header">
+            <span class="section-title">采购</span>
+            <span class="diff-badge" :style="diffStyle(diffData.procurement.diff)">
+              {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
+              <span class="diff-percent">({{ diffSign(diffData.procurement.percent) }}{{ Math.abs(diffData.procurement.percent).toFixed(1) }}%)</span>
+            </span>
+          </div>
+          <div class="section-body">
+            <div class="section-left">
               <el-table :data="leftProcurementItems" size="small">
-                <el-table-column label="BOM项" width="200">
+                <el-table-column label="BOM项" width="180">
                   <template #default="{ row }">{{ row.bomItem }}</template>
                 </el-table-column>
-                <el-table-column label="数量" width="120">
+                <el-table-column label="数量" width="100">
                   <template #default="{ row }">{{ row.qty }}</template>
                 </el-table-column>
-                <el-table-column label="单价" width="140">
+                <el-table-column label="单价" width="120">
                   <template #default="{ row }">{{ formatMoney(row.unitPrice) }}</template>
                 </el-table-column>
-                <el-table-column label="金额" width="160">
+                <el-table-column label="金额" width="140">
                   <template #default="{ row }">¥ {{ formatMoney(row.budgetAmount) }}</template>
                 </el-table-column>
               </el-table>
-            </el-card>
+              <div class="section-total">合计：¥ {{ formatMoney(leftProcurementTotal) }} 元人民币</div>
+            </div>
+            <div class="section-right">
+              <el-table :data="form.items.PROCUREMENT" size="small">
+                <el-table-column label="BOM项" width="180">
+                  <template #default="{ row }">
+                    <el-input v-model="row.bomItem" size="small" placeholder="BOM项名称" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="数量" width="100">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.qty" :min="0" size="small" @change="calcProcurementAmount(row)" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="单价" width="120">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.unitPrice" :min="0" :precision="2" size="small" @change="calcProcurementAmount(row)" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="金额" width="140">
+                  <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
+                </el-table-column>
+                <el-table-column label="操作" width="80">
+                  <template #default="{ $index }">
+                    <el-button link type="danger" size="small" @click="removeItem('PROCUREMENT', $index)"
+                      :disabled="form.items.PROCUREMENT.length <= 1">删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-button size="small" @click="addItem('PROCUREMENT')" style="margin-top: 8px">
+                <el-icon><Plus /></el-icon> 添加BOM项
+              </el-button>
+              <div class="section-total">合计：¥ {{ formatMoney(categoryTotal('PROCUREMENT')) }} 元人民币</div>
+            </div>
+          </div>
+        </div>
 
-            <el-card class="category-card" shadow="never">
-              <template #header>
-                <div class="category-header">
-                  <span>其他科目</span>
-                  <span class="category-amount">合计：¥ {{ formatMoney(leftOtherTotal) }} 元人民币</span>
-                </div>
-              </template>
+        <!-- 4. 其他科目 -->
+        <div class="category-section">
+          <div class="section-header">
+            <span class="section-title">其他科目</span>
+            <span class="diff-badge" :style="diffStyle(diffData.other.diff)">
+              {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
+              <span class="diff-percent">({{ diffSign(diffData.other.percent) }}{{ Math.abs(diffData.other.percent).toFixed(1) }}%)</span>
+            </span>
+          </div>
+          <div class="section-body">
+            <div class="section-left">
               <div class="other-categories-row">
                 <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
                   <div class="other-cat-item">
@@ -112,146 +237,60 @@
                   <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
                 </template>
               </div>
-            </el-card>
-
-            <el-divider>预算汇总</el-divider>
-            <div class="budget-summary-row">
-              <div class="summary-item">
-                <label>总预算</label>
-                <div class="summary-value highlight">¥ {{ formatMoney(leftTotalBudget) }} 元人民币</div>
-              </div>
-              <div class="summary-operator">=</div>
-              <div class="summary-item">
-                <label>项目直接预算</label>
-                <div class="summary-value">¥ {{ formatMoney(leftCostBaseline) }} 元人民币</div>
-              </div>
-              <div class="summary-operator">+</div>
-              <div class="summary-item">
-                <label>项目管理预算</label>
-                <div class="summary-value">¥ {{ formatMoney(originalData.budget?.managementReserve) }} 元人民币</div>
-              </div>
+              <div class="section-total">合计：¥ {{ formatMoney(leftOtherTotal) }} 元人民币</div>
             </div>
-          </el-card>
+            <div class="section-right">
+              <div class="other-categories-row">
+                <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
+                  <div class="other-cat-item">
+                    <label class="other-cat-label">{{ cat.label }}</label>
+                    <el-input-number
+                      v-model="form.items[cat.value][0].amount"
+                      :min="0"
+                      :precision="2"
+                      size="small"
+                      controls-position="right"
+                    />
+                  </div>
+                  <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
+                </template>
+              </div>
+              <div class="section-total">合计：¥ {{ formatMoney(otherTotal) }} 元人民币</div>
+            </div>
+          </div>
         </div>
 
-        <!-- RIGHT: editable form -->
-        <div class="right-panel">
-          <div class="panel-title">升级编辑</div>
-          <el-card shadow="never" class="panel-card">
-            <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
-              <el-form-item label="项目名称" prop="projectId">
-                <el-select v-model="form.projectId" filterable placeholder="请输入搜索项目名称" style="width: 100%" disabled>
-                  <el-option v-for="p in projects" :key="p.id" :label="p.projectName" :value="p.id" />
-                </el-select>
-              </el-form-item>
+        <el-divider>预算汇总</el-divider>
 
-              <el-divider>预算科目</el-divider>
-
-              <el-card class="category-card" shadow="never">
-                <template #header>
-                  <div class="category-header">
-                    <span>人工</span>
-                    <span class="category-amount">合计：¥ {{ formatMoney(categoryTotal('LABOR')) }} 元人民币</span>
-                  </div>
-                </template>
-                <el-table :data="form.items.LABOR" size="small">
-                  <el-table-column label="岗位" width="140">
-                    <template #default="{ row }">
-                      <el-select v-model="row.positionId" size="small" filterable placeholder="请选择岗位"
-                        @change="handlePositionChange(row)">
-                        <el-option v-for="p in positionList" :key="p.id" :label="p.name" :value="p.id" />
-                      </el-select>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="工时(小时)" width="140">
-                    <template #default="{ row }">
-                      <el-input-number v-model="row.hours" :min="0" size="small" @change="calcLaborAmount(row)" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="成本定额(元/时)" width="160">
-                    <template #default="{ row }">
-                      <el-input-number v-model="row.costRate" :min="0" :precision="2" size="small" disabled
-                        :class="{ 'zero-rate': row.costRate === 0 }" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="金额" width="160">
-                    <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="80">
-                    <template #default="{ $index }">
-                      <el-button link type="danger" size="small" @click="removeItem('LABOR', $index)"
-                        :disabled="form.items.LABOR.length <= 1">删除</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-                <el-button size="small" @click="addItem('LABOR')" style="margin-top: 8px">
-                  <el-icon><Plus /></el-icon> 添加人员
-                </el-button>
-              </el-card>
-
-              <el-card class="category-card" shadow="never">
-                <template #header>
-                  <div class="category-header">
-                    <span>采购</span>
-                    <span class="category-amount">合计：¥ {{ formatMoney(categoryTotal('PROCUREMENT')) }} 元人民币</span>
-                  </div>
-                </template>
-                <el-table :data="form.items.PROCUREMENT" size="small">
-                  <el-table-column label="BOM项" width="200">
-                    <template #default="{ row }">
-                      <el-input v-model="row.bomItem" size="small" placeholder="BOM项名称" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="数量" width="120">
-                    <template #default="{ row }">
-                      <el-input-number v-model="row.qty" :min="0" size="small" @change="calcProcurementAmount(row)" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="单价" width="140">
-                    <template #default="{ row }">
-                      <el-input-number v-model="row.unitPrice" :min="0" :precision="2" size="small" @change="calcProcurementAmount(row)" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="金额" width="160">
-                    <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="80">
-                    <template #default="{ $index }">
-                      <el-button link type="danger" size="small" @click="removeItem('PROCUREMENT', $index)"
-                        :disabled="form.items.PROCUREMENT.length <= 1">删除</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-                <el-button size="small" @click="addItem('PROCUREMENT')" style="margin-top: 8px">
-                  <el-icon><Plus /></el-icon> 添加BOM项
-                </el-button>
-              </el-card>
-
-              <el-card class="category-card" shadow="never">
-                <template #header>
-                  <div class="category-header">
-                    <span>其他科目</span>
-                    <span class="category-amount">合计: ¥ {{ formatMoney(otherTotal) }} 元人民币</span>
-                  </div>
-                </template>
-                <div class="other-categories-row">
-                  <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
-                    <div class="other-cat-item">
-                      <label class="other-cat-label">{{ cat.label }}</label>
-                      <el-input-number
-                        v-model="form.items[cat.value][0].amount"
-                        :min="0"
-                        :precision="2"
-                        size="small"
-                        controls-position="right"
-                      />
-                    </div>
-                    <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
-                  </template>
+        <!-- 5. 预算汇总对比 -->
+        <div class="category-section">
+          <div class="section-header">
+            <span class="section-title">预算汇总</span>
+            <span class="diff-badge" :style="diffStyle(diffData.total.diff)">
+              {{ diffSign(diffData.total.diff) }}¥{{ formatMoney(Math.abs(diffData.total.diff)) }}
+              <span class="diff-percent">({{ diffSign(diffData.total.percent) }}{{ Math.abs(diffData.total.percent).toFixed(1) }}%)</span>
+            </span>
+          </div>
+          <div class="section-body">
+            <div class="section-left">
+              <div class="budget-summary-row">
+                <div class="summary-item">
+                  <label>总预算</label>
+                  <div class="summary-value highlight">¥ {{ formatMoney(leftTotalBudget) }} 元人民币</div>
                 </div>
-              </el-card>
-
-              <el-divider>预算汇总</el-divider>
+                <div class="summary-operator">=</div>
+                <div class="summary-item">
+                  <label>项目直接预算</label>
+                  <div class="summary-value">¥ {{ formatMoney(leftCostBaseline) }} 元人民币</div>
+                </div>
+                <div class="summary-operator">+</div>
+                <div class="summary-item">
+                  <label>项目管理预算</label>
+                  <div class="summary-value">¥ {{ formatMoney(parseFloat(originalData.budget?.managementReserve) || 0) }} 元人民币</div>
+                </div>
+              </div>
+            </div>
+            <div class="section-right">
               <div class="budget-summary-row">
                 <div class="summary-item">
                   <label>总预算</label>
@@ -265,26 +304,27 @@
                 <div class="summary-operator">+</div>
                 <div class="summary-item input-item">
                   <label>项目管理预算</label>
-                  <el-input-number v-model="form.managementReserve" :min="0" :precision="2" @change="calcTotals" class="reserve-input" />
+                  <el-input-number v-model="form.managementReserve" :min="0" :precision="2" class="reserve-input" />
                 </div>
               </div>
-            </el-form>
-
-            <div class="form-actions">
-              <el-button type="primary" @click="handleUpgrade" :loading="submitting">升级</el-button>
-              <el-button @click="$router.back()">返回</el-button>
             </div>
-          </el-card>
+          </div>
         </div>
-      </div>
+
+        <!-- 6. 操作按钮 -->
+        <div class="form-actions">
+          <el-button type="primary" @click="handleUpgrade" :loading="submitting">升级</el-button>
+          <el-button @click="$router.back()">返回</el-button>
+        </div>
+      </el-form>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onActivated, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted, onUnmounted, onActivated, watch } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getBudgetDetailWithItemsApi, upgradeBudgetApi } from '@/api/pm/budget'
 import { getCharterListApi } from '@/api/pm/charter'
@@ -392,6 +432,107 @@ const categoryTotal = (category) => {
   const items = form.value.items[category] || []
   return items.reduce((sum, item) => sum + (item.amount || 0), 0)
 }
+
+// ========== 差异计算 ==========
+
+const safePercent = (diff, base) => {
+  if (base) return (diff / base) * 100
+  return diff !== 0 ? 100 : 0
+}
+
+const diffData = computed(() => {
+  const leftLabor = leftLaborTotal.value
+  const leftProcurement = leftProcurementTotal.value
+  const leftOther = leftOtherTotal.value
+  const leftSubTotal = leftCostBaseline.value
+  const leftManagementReserve = parseFloat(originalData.value.budget?.managementReserve) || 0
+  const leftTotal = leftTotalBudget.value
+
+  const rightLabor = categoryTotal('LABOR')
+  const rightProcurement = categoryTotal('PROCUREMENT')
+  const rightOther = otherTotal.value
+  const rightSubTotal = costBaseline.value
+  const rightManagementReserve = form.value.managementReserve || 0
+  const rightTotal = totalBudget.value
+
+  const laborDiff = rightLabor - leftLabor
+  const procurementDiff = rightProcurement - leftProcurement
+  const otherDiff = rightOther - leftOther
+  const subTotalDiff = laborDiff + procurementDiff + otherDiff
+  const managementReserveDiff = rightManagementReserve - leftManagementReserve
+  const totalDiff = subTotalDiff + managementReserveDiff
+
+  return {
+    labor:       { diff: laborDiff, percent: safePercent(laborDiff, leftLabor) },
+    procurement: { diff: procurementDiff, percent: safePercent(procurementDiff, leftProcurement) },
+    other:       { diff: otherDiff, percent: safePercent(otherDiff, leftOther) },
+    subTotal:    { diff: subTotalDiff, percent: safePercent(subTotalDiff, leftSubTotal) },
+    managementReserve: { diff: managementReserveDiff, percent: safePercent(managementReserveDiff, leftManagementReserve) },
+    total:       { diff: totalDiff, percent: safePercent(totalDiff, leftTotal) }
+  }
+})
+
+const diffColor = (val) => val > 0 ? '#F56C6C' : val < 0 ? '#67C23A' : '#909399'
+const diffSign = (val) => val > 0 ? '+' : ''
+const diffStyle = (val) => ({ color: diffColor(val) })
+
+// ========== 未保存修改检测 ==========
+
+const isDirty = ref(false)
+
+const hasUnsavedChanges = () => {
+  if (Math.abs((form.value.managementReserve || 0) - (parseFloat(originalData.value.budget?.managementReserve) || 0)) > 0.01) return true
+  if (Math.abs(costBaseline.value - leftCostBaseline.value) > 0.01) return true
+  return false
+}
+
+watch(form, () => {
+  isDirty.value = hasUnsavedChanges()
+}, { deep: true })
+
+const handleBeforeUnload = (e) => {
+  if (isDirty.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  Promise.all([loadProjects(), loadPositions()]).then(() => loadOriginalData())
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+onActivated(async () => {
+  await Promise.all([loadProjects(), loadPositions()])
+  if (!isDirty.value) {
+    loadOriginalData()
+  }
+})
+
+onBeforeRouteLeave((to, from, next) => {
+  if (isDirty.value) {
+    ElMessageBox.confirm('您有未保存的修改，确定要离开吗？', '提示', {
+      confirmButtonText: '确定离开',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => next()).catch(() => next(false))
+  } else {
+    next()
+  }
+})
+
+watch(() => route.params.id, (newId) => {
+  if (!route.path.startsWith('/pm/budget/upgrade')) return
+  if (newId) {
+    loadOriginalData()
+  }
+})
+
+// ========== 业务逻辑（保持不变） ==========
 
 const calcLaborAmount = (row) => {
   row.amount = (row.hours || 0) * (row.costRate || 0)
@@ -516,7 +657,6 @@ const loadOriginalData = async () => {
     form.value.projectId = data.budget?.projectId || ''
     form.value.managementReserve = parseFloat(data.budget?.managementReserve) || 0
 
-    // Pre-fill editable form with original budget items
     if (data.items) {
       const laborItems = data.items.filter(i => i.category === 'LABOR')
       const procurementItems = data.items.filter(i => i.category === 'PROCUREMENT')
@@ -548,23 +688,6 @@ const loadOriginalData = async () => {
     ElMessage.error('加载原预算数据失败')
   }
 }
-
-onMounted(async () => {
-  await Promise.all([loadProjects(), loadPositions()])
-  loadOriginalData()
-})
-
-onActivated(async () => {
-  await Promise.all([loadProjects(), loadPositions()])
-  loadOriginalData()
-})
-
-watch(() => route.params.id, (newId) => {
-  if (!route.path.startsWith('/pm/budget/upgrade')) return
-  if (newId) {
-    loadOriginalData()
-  }
-})
 </script>
 
 <style scoped>
@@ -574,35 +697,18 @@ watch(() => route.params.id, (newId) => {
   align-items: center;
 }
 
-.split-panels {
+/* 项目信息栏 + 全局差异面板 */
+.project-info-bar {
   display: flex;
-  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 8px;
 }
 
-.left-panel,
-.right-panel {
+.info-readonly {
   flex: 1;
   min-width: 0;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
-.panel-title {
-  font-size: 15px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 12px;
-  padding-left: 4px;
-  border-left: 3px solid #409eff;
-  padding: 4px 0 4px 10px;
-}
-
-.panel-card {
-  border: 1px solid #ebeef5;
-}
-
-.info-section {
-  padding: 16px 0;
 }
 
 .info-item {
@@ -624,21 +730,117 @@ watch(() => route.params.id, (newId) => {
   color: #303133;
 }
 
-.category-card {
-  margin-bottom: 12px;
+/* 全局差异面板 */
+.global-diff-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  padding: 12px 16px;
 }
 
-.category-header {
+.diff-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.diff-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 13px;
+  color: #606266;
+  line-height: 24px;
 }
 
-.category-amount {
-  color: #409eff;
+.diff-row.sub-total {
   font-weight: bold;
+  color: #303133;
 }
 
+.diff-row.total {
+  font-weight: bold;
+  font-size: 14px;
+  color: #303133;
+  margin-top: 2px;
+}
+
+/* 科目区块 */
+.category-section {
+  margin-bottom: 24px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.section-body {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+}
+
+.section-left,
+.section-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  font-weight: bold;
+  color: #606266;
+  margin-bottom: 8px;
+  padding-left: 4px;
+  border-left: 3px solid #409eff;
+  padding: 2px 0 2px 10px;
+}
+
+.section-total {
+  text-align: right;
+  font-size: 14px;
+  font-weight: bold;
+  color: #409eff;
+  margin-top: 8px;
+}
+
+/* 差异徽章 */
+.diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.diff-percent {
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.85;
+}
+
+/* 其他科目 */
 .other-categories-row {
   display: flex;
   gap: 40px;
@@ -671,14 +873,7 @@ watch(() => route.params.id, (newId) => {
   margin-bottom: 8px;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
+/* 预算汇总 */
 .budget-summary-row {
   display: flex;
   align-items: flex-end;
@@ -722,6 +917,15 @@ watch(() => route.params.id, (newId) => {
 
 .reserve-input {
   width: 100%;
+}
+
+/* 操作按钮 */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 :deep(.zero-rate .el-input__inner) {
