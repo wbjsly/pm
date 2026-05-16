@@ -61,4 +61,13 @@ public class WhPmBudget extends BaseEntity {
 
     @TableField(exist = false)
     private Double costRatio;
+
+    @TableField(exist = false)
+    private String laborAmount;
+
+    @TableField(exist = false)
+    private String procurementAmount;
+
+    @TableField(exist = false)
+    private String otherAmount;
 }

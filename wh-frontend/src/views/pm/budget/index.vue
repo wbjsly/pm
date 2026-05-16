@@ -25,72 +25,148 @@
         </div>
       </template>
 
-      <!-- Table -->
-      <el-table :data="tableData" v-loading="loading" :key="tableKey" stripe>
-        <el-table-column prop="budgetCode" label="预算编码" width="180" />
+      <el-table
+        :data="tableData"
+        v-loading="loading"
+        :key="tableKey"
+        row-key="id"
+        :expand-row-keys="expandRowKeys"
+        @expand-change="handleExpand"
+        @row-click="handleRowClick"
+        stripe
+        style="width: 100%"
+      >
+        <el-table-column type="expand">
+          <template #default="{ row }">
+            <el-table
+              v-if="row.children && row.children.length > 0"
+              :data="row.children"
+              size="small"
+              style="margin: 4px 20px 8px 48px; width: auto;"
+            >
+              <el-table-column prop="budgetCode" label="预算编码" width="180" />
+              <el-table-column prop="version" label="版本号" width="90" />
+              <el-table-column label="项目总预算(元)" width="150">
+                <template #default="{ row: r }">{{ formatMoney(r.totalBudget) }}</template>
+              </el-table-column>
+              <el-table-column label="直接预算(元)" width="150">
+                <template #default="{ row: r }">{{ formatMoney(r.costBaseline) }}</template>
+              </el-table-column>
+              <el-table-column label="人工(元)" width="140">
+                <template #default="{ row: r }">{{ formatMoney(r.laborAmount) }}</template>
+              </el-table-column>
+              <el-table-column label="采购(元)" width="140">
+                <template #default="{ row: r }">{{ formatMoney(r.procurementAmount) }}</template>
+              </el-table-column>
+              <el-table-column label="其他(元)" width="140">
+                <template #default="{ row: r }">{{ formatMoney(r.otherAmount) }}</template>
+              </el-table-column>
+              <el-table-column label="管理储备(元)" width="140">
+                <template #default="{ row: r }">{{ formatMoney(r.managementReserve) }}</template>
+              </el-table-column>
+              <el-table-column label="状态" width="100">
+                <template #default="{ row: r }">
+                  <el-tag :type="dictStore.getTagType('BUDGET_STATUS', r.status)">{{ dictStore.getLabel('BUDGET_STATUS', r.status) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="创建日期" width="120">
+                <template #default="{ row: r }">
+                  {{ formatDate(r.createDate) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200">
+                <template #default="{ row: r }">
+                  <el-tooltip content="查看" placement="top">
+                    <el-button link type="primary" @click="handleView(r)" :icon="View" />
+                  </el-tooltip>
+                  <el-tooltip content="编辑" placement="top" v-if="r.status === 'DRAFT'">
+                    <el-button link type="primary" @click="handleEdit(r)" :icon="Edit" />
+                  </el-tooltip>
+                  <el-tooltip content="删除" placement="top" v-if="r.status === 'DRAFT'">
+                    <el-button link type="danger" @click="handleDelete(r)" :icon="Delete" />
+                  </el-tooltip>
+                  <el-tooltip content="提交审批" placement="top" v-if="r.status === 'DRAFT'">
+                    <el-button link type="warning" @click="handleSubmit(r)" :icon="Promotion" />
+                  </el-tooltip>
+                  <el-tooltip content="预实对比" placement="top" v-if="r.status === 'APPROVED'">
+                    <el-button link type="success" @click="handleComparison(r)" :icon="Document" />
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+            <span v-else style="padding: 8px 48px; color: #909399; display: inline-block;">暂无预算版本</span>
+          </template>
+        </el-table-column>
         <el-table-column label="项目名称" min-width="200">
           <template #default="{ row }">
-            <span>{{ row.projectName }}</span>
+            <span style="font-weight: 600;">{{ row.projectName }}</span>
             <span v-if="row.projectShortName" style="color: #909399;">（{{ row.projectShortName }}）</span>
           </template>
         </el-table-column>
-        <el-table-column prop="pmName" label="项目经理" width="120" />
-        <el-table-column prop="version" label="版本号" width="80" />
-        <el-table-column prop="projectDirectBudget" label="项目直接预算(元)" width="150">
-          <template #default="{ row }">{{ formatMoney(row.costBaseline) }}</template>
-        </el-table-column>
-        <el-table-column prop="actualCost" label="项目成本(元)" width="150">
-          <template #default="{ row }">{{ formatMoney(row.actualCost) }}</template>
-        </el-table-column>
-        <el-table-column prop="budgetRemaining" label="预算余额(元)" width="150">
+        <el-table-column label="项目状态" width="100">
           <template #default="{ row }">
-            <span :style="{ color: (row.budgetRemaining ?? 0) < 0 ? '#f56c6c' : '' }">
-              {{ formatMoney(row.budgetRemaining) }}
+            <el-tag :type="dictStore.getTagType('CHARTER_STATUS', row.projectStatus)">{{ dictStore.getLabel('CHARTER_STATUS', row.projectStatus) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="最新已审批版本" width="130">
+          <template #default="{ row }">
+            <span v-if="row.latestApprovedVersion">{{ row.latestApprovedVersion }}</span>
+            <span v-else style="color: #c0c4cc;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="项目总预算(元)" width="150">
+          <template #default="{ row }">
+            <span v-if="row.latestApprovedTotalBudget">{{ formatMoney(row.latestApprovedTotalBudget) }}</span>
+            <span v-else style="color: #c0c4cc;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="已审批项目直接预算(元)" width="180">
+          <template #default="{ row }">
+            <span v-if="row.latestApprovedAmount">{{ formatMoney(row.latestApprovedAmount) }}</span>
+            <span v-else style="color: #c0c4cc;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="实际成本(元)" width="140">
+          <template #default="{ row }">
+            {{ formatMoney(row.projectActualCost) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="预算余额(元)" width="140">
+          <template #default="{ row }">
+            <span :style="{ color: (row.projectBudgetRemaining ?? 0) < 0 ? '#f56c6c' : '' }">
+              {{ formatMoney(row.projectBudgetRemaining) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="costRatio" label="预算投入比例" width="120">
+        <el-table-column label="投入比例" width="110">
           <template #default="{ row }">
-            <span :style="{ color: (row.costRatio ?? 0) > 1 ? '#f56c6c' : (row.costRatio ?? 0) > 0.9 ? '#e6a23c' : '' }">
-              {{ formatPercent(row.costRatio) }}
+            <span :style="{ color: (row.projectCostRatio ?? 0) > 1 ? '#f56c6c' : (row.projectCostRatio ?? 0) > 0.9 ? '#e6a23c' : '' }">
+              {{ formatPercent(row.projectCostRatio) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column label="版本数" width="70">
           <template #default="{ row }">
-            <el-tag :type="dictStore.getTagType('BUDGET_STATUS', row.status)">{{ dictStore.getLabel('BUDGET_STATUS', row.status) }}</el-tag>
+            {{ row.versionCount }}
           </template>
         </el-table-column>
-        <el-table-column prop="createDate" label="创建日期" width="120">
+        <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
-            {{ formatDate(row.createDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-tooltip content="查看" placement="top">
-              <el-button link type="primary" @click="handleView(row)" :icon="View" />
-            </el-tooltip>
-            <el-tooltip content="编辑" placement="top" v-if="row.status === 'DRAFT'">
-              <el-button link type="primary" @click="handleEdit(row)" :icon="Edit" />
-            </el-tooltip>
-            <el-tooltip content="删除" placement="top" v-if="row.status === 'DRAFT'">
-              <el-button link type="danger" @click="handleDelete(row)" :icon="Delete" />
-            </el-tooltip>
-            <el-tooltip content="提交审批" placement="top" v-if="row.status === 'DRAFT'">
-              <el-button link type="warning" @click="handleSubmit(row)" :icon="Promotion" />
-            </el-tooltip>
-            <el-tooltip content="预实对比" placement="top" v-if="row.status === 'APPROVED'">
-              <el-button link type="success" @click="handleComparison(row)" :icon="Document" />
-            </el-tooltip>
-            <el-tooltip content="升级" placement="top" v-if="row.status === 'APPROVED'">
-              <el-button link type="primary" @click="handleUpgrade(row)" :icon="Promotion" />
-            </el-tooltip>
+            <div style="display: flex; align-items: center; gap: 2px;">
+              <el-tooltip content="预实对比" placement="top" v-if="row.latestApprovedBudgetId">
+                <el-button link type="success" @click="handleProjectComparison(row)" :icon="Document" />
+              </el-tooltip>
+              <el-tooltip content="升级" placement="top" v-if="row.latestApprovedBudgetId && !hasDraftBudget(row)">
+                <el-button link type="primary" @click="handleProjectUpgrade(row)" :icon="Promotion" />
+              </el-tooltip>
+              <el-tooltip content="新增预算" placement="top" v-if="!row.hasAnyBudget">
+                <el-button link type="primary" @click="handleProjectCreate(row)" :icon="Plus" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- Pagination -->
       <el-pagination
         v-model:current-page="queryParams.pageNum"
         v-model:page-size="queryParams.pageSize"
@@ -110,7 +186,7 @@ import { ref, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, View, Edit, Delete, Promotion, Document } from '@element-plus/icons-vue'
-import { getBudgetListApi, deleteBudgetApi, submitBudgetApi } from '@/api/pm/budget'
+import { getProjectBudgetsApi, deleteBudgetApi, submitBudgetApi } from '@/api/pm/budget'
 import { getCharterListApi } from '@/api/pm/charter'
 
 import { useDictStore } from '@/store/dict'
@@ -123,6 +199,7 @@ const total = ref(0)
 const tableKey = ref(0)
 const projects = ref([])
 const pmList = ref([])
+const expandRowKeys = ref([])
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
@@ -148,15 +225,38 @@ const formatDate = (dateStr) => {
   return dateStr.substring(0, 10)
 }
 
+const handleExpand = (row, expandedRows) => {
+  if (expandedRows.length > 0) {
+    expandRowKeys.value = [expandedRows[expandedRows.length - 1].id]
+  } else {
+    expandRowKeys.value = []
+  }
+}
+
+const handleRowClick = (row) => {
+  if (expandRowKeys.value.includes(row.id)) {
+    expandRowKeys.value = []
+  } else {
+    expandRowKeys.value = [row.id]
+  }
+}
+
 const handleUpgrade = (row) => {
   router.push(`/pm/budget/upgrade/${row.id}`)
+}
+
+const hasDraftBudget = (row) => {
+  return row.children && row.children.some(c => c.status === 'DRAFT')
+}
+
+const handleProjectUpgrade = (row) => {
+  router.push(`/pm/budget/upgrade/${row.latestApprovedBudgetId}`)
 }
 
 const loadProjects = async () => {
   try {
     const res = await getCharterListApi({ pageNum: 1, pageSize: 100 })
     projects.value = res.data?.records || []
-    // Build PM list from charters
     const pmMap = new Map()
     for (const charter of projects.value) {
       if (charter.pmId && charter.pmName) {
@@ -172,9 +272,33 @@ const loadProjects = async () => {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getBudgetListApi(queryParams.value)
-    tableData.value = res.data.records || []
+    const res = await getProjectBudgetsApi(queryParams.value)
+    const records = res.data.records || []
     total.value = res.data.total || 0
+
+    tableData.value = records.map(project => {
+      const children = (project.budgets || []).map(b => ({
+        ...b,
+        isProject: false
+      }))
+      return {
+        id: 'proj-' + project.projectId,
+        projectId: project.projectId,
+        projectName: project.projectName,
+        projectShortName: project.projectShortName,
+        projectStatus: project.projectStatus,
+        hasAnyBudget: project.hasAnyBudget,
+        latestApprovedVersion: project.latestApprovedVersion,
+        latestApprovedAmount: project.latestApprovedAmount,
+        latestApprovedTotalBudget: project.latestApprovedTotalBudget,
+        latestApprovedBudgetId: project.latestApprovedBudgetId,
+        projectActualCost: project.projectActualCost,
+        projectBudgetRemaining: project.projectBudgetRemaining,
+        projectCostRatio: project.projectCostRatio,
+        versionCount: children.length,
+        children
+      }
+    })
   } catch (e) {
     ElMessage.error('加载数据失败')
   } finally {
@@ -184,16 +308,22 @@ const loadData = async () => {
 
 const handleSearch = () => {
   queryParams.value.pageNum = 1
+  expandRowKeys.value = []
   loadData()
 }
 
 const handleReset = () => {
   queryParams.value = { pageNum: 1, pageSize: 10, projectId: '', pmId: '', status: '' }
+  expandRowKeys.value = []
   loadData()
 }
 
 const handleCreate = () => {
   router.push('/pm/budget/form')
+}
+
+const handleProjectCreate = (row) => {
+  router.push(`/pm/budget/form?projectId=${row.projectId}`)
 }
 
 const handleEdit = (row) => {
@@ -230,6 +360,12 @@ const handleSubmit = async (row) => {
 
 const handleComparison = (row) => {
   router.push(`/pm/budget/comparison/${row.projectId}?budgetId=${row.id}`)
+}
+
+const handleProjectComparison = (row) => {
+  if (row.latestApprovedBudgetId) {
+    router.push(`/pm/budget/comparison/${row.projectId}?budgetId=${row.latestApprovedBudgetId}`)
+  }
 }
 
 onMounted(() => {

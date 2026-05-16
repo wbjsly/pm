@@ -4,6 +4,10 @@ export function getBudgetListApi(params) {
   return request.get('/pm/budgets', { params })
 }
 
+export function getProjectBudgetsApi(params) {
+  return request.get('/pm/budgets/projects', { params })
+}
+
 export function getBudgetDetailApi(id) {
   return request.get(`/pm/budgets/${id}`)
 }

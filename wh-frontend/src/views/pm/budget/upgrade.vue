@@ -8,7 +8,7 @@
         </div>
       </template>
 
-      <!-- 1. 项目信息区 + 全局差异面板 -->
+      <!-- 项目信息区 + 全局差异面板 -->
       <div class="project-info-bar">
         <div class="info-readonly">
           <el-row :gutter="16">
@@ -40,52 +40,86 @@
             </el-col>
           </el-row>
         </div>
-        <div class="global-diff-panel">
-          <div class="diff-title">预算变更汇总</div>
-          <div class="diff-row">
-            <span>人工</span>
-            <span :style="diffStyle(diffData.labor.diff)">
-              {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
-            </span>
-          </div>
-          <div class="diff-row">
-            <span>采购</span>
-            <span :style="diffStyle(diffData.procurement.diff)">
-              {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
-            </span>
-          </div>
-          <div class="diff-row">
-            <span>其他</span>
-            <span :style="diffStyle(diffData.other.diff)">
-              {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
-            </span>
-          </div>
-          <div class="diff-row sub-total">
-            <span>科目差异合计</span>
-            <span :style="diffStyle(diffData.subTotal.diff)">
-              {{ diffSign(diffData.subTotal.diff) }}¥{{ formatMoney(Math.abs(diffData.subTotal.diff)) }}
-            </span>
-          </div>
-          <el-divider style="margin: 6px 0" />
-          <div class="diff-row" v-if="Math.abs(diffData.managementReserve.diff) > 0.01">
-            <span>管理储备</span>
-            <span :style="diffStyle(diffData.managementReserve.diff)">
-              {{ diffSign(diffData.managementReserve.diff) }}¥{{ formatMoney(Math.abs(diffData.managementReserve.diff)) }}
-            </span>
-          </div>
-          <div class="diff-row total">
-            <span>总预算差异</span>
-            <span :style="diffStyle(diffData.total.diff)">
-              {{ diffSign(diffData.total.diff) }}¥{{ formatMoney(Math.abs(diffData.total.diff)) }}
-            </span>
-          </div>
-        </div>
       </div>
 
       <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
+        <!-- 预算变更汇总 -->
+        <div class="waterfall-panel">
+          <div class="waterfall-title">预算变更汇总</div>
+          <div class="waterfall-body">
+            <div class="wf-row wf-header">
+              <span class="wf-label"></span>
+              <span class="wf-amount-label">调整前</span>
+              <span class="wf-arrow"></span>
+              <span class="wf-amount-label">调整后</span>
+              <span class="wf-diff-label">差异</span>
+            </div>
+            <div class="wf-row">
+              <span class="wf-label">人工</span>
+              <span class="wf-amount">¥{{ formatMoney(leftLaborTotal) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(categoryTotal('LABOR')) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.labor.diff)">
+                {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
+                ({{ diffSign(diffData.labor.percent) }}{{ Math.abs(diffData.labor.percent).toFixed(1) }}%)
+              </span>
+            </div>
+            <div class="wf-row">
+              <span class="wf-label">采购</span>
+              <span class="wf-amount">¥{{ formatMoney(leftProcurementTotal) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(categoryTotal('PROCUREMENT')) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.procurement.diff)">
+                {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
+                ({{ diffSign(diffData.procurement.percent) }}{{ Math.abs(diffData.procurement.percent).toFixed(1) }}%)
+              </span>
+            </div>
+            <div class="wf-row">
+              <span class="wf-label">其他</span>
+              <span class="wf-amount">¥{{ formatMoney(leftOtherTotal) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(otherTotal) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.other.diff)">
+                {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
+                ({{ diffSign(diffData.other.percent) }}{{ Math.abs(diffData.other.percent).toFixed(1) }}%)
+              </span>
+            </div>
+            <div class="wf-row wf-subtotal">
+              <span class="wf-label">科目差异合计</span>
+              <span class="wf-amount">¥{{ formatMoney(leftCostBaseline) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(costBaseline) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.subTotal.diff)">
+                {{ diffSign(diffData.subTotal.diff) }}¥{{ formatMoney(Math.abs(diffData.subTotal.diff)) }}
+                ({{ diffSign(diffData.subTotal.percent) }}{{ Math.abs(diffData.subTotal.percent).toFixed(1) }}%)
+              </span>
+            </div>
+            <div class="wf-row" v-if="Math.abs(diffData.managementReserve.diff) > 0.01">
+              <span class="wf-label">管理储备</span>
+              <span class="wf-amount">¥{{ formatMoney(parseFloat(originalData.budget?.managementReserve) || 0) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(form.managementReserve || 0) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.managementReserve.diff)">
+                {{ diffSign(diffData.managementReserve.diff) }}¥{{ formatMoney(Math.abs(diffData.managementReserve.diff)) }}
+                ({{ diffSign(diffData.managementReserve.percent) }}{{ Math.abs(diffData.managementReserve.percent).toFixed(1) }}%)
+              </span>
+            </div>
+            <div class="wf-row wf-total">
+              <span class="wf-label">总预算差异</span>
+              <span class="wf-amount">¥{{ formatMoney(leftTotalBudget) }}</span>
+              <span class="wf-arrow">→</span>
+              <span class="wf-amount">¥{{ formatMoney(totalBudget) }}</span>
+              <span class="wf-diff-col" :style="diffStyle(diffData.total.diff)">
+                {{ diffSign(diffData.total.diff) }}¥{{ formatMoney(Math.abs(diffData.total.diff)) }}
+                ({{ diffSign(diffData.total.percent) }}{{ Math.abs(diffData.total.percent).toFixed(1) }}%)
+              </span>
+            </div>
+          </div>
+        </div>
+
         <el-divider>预算科目</el-divider>
 
-        <!-- 2. 人工科目 -->
+        <!-- 人工科目 -->
         <div class="category-section">
           <div class="section-header">
             <span class="section-title">人工</span>
@@ -96,29 +130,34 @@
           </div>
           <div class="section-body">
             <div class="section-left">
-              <div class="section-subtitle">原预算（{{ originalVersion }}）</div>
+              <div class="section-subtitle">
+                <span>调整前预算</span>
+                <span>调整前预算合计：¥ {{ formatMoney(leftLaborTotal) }}</span>
+              </div>
               <el-table :data="leftLaborItems" size="small">
                 <el-table-column label="岗位" width="140">
                   <template #default="{ row }">
                     <span>{{ row.positionName || roleLabel(row.roleCode) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="工时(小时)" width="120">
+                <el-table-column label="工时(小时)" width="100">
                   <template #default="{ row }">{{ row.hours }}</template>
                 </el-table-column>
-                <el-table-column label="成本定额(元/时)" width="140">
-                  <template #default="{ row }">{{ formatMoney(row.costRate) }}</template>
-                </el-table-column>
-                <el-table-column label="金额" width="140">
+                <el-table-column label="金额" width="120">
                   <template #default="{ row }">¥ {{ formatMoney(row.budgetAmount) }}</template>
                 </el-table-column>
               </el-table>
-              <div class="section-total">合计：¥ {{ formatMoney(leftLaborTotal) }} 元人民币</div>
             </div>
             <div class="section-right">
-              <div class="section-subtitle">编辑</div>
-              <el-table :data="form.items.LABOR" size="small">
-                <el-table-column label="岗位" width="140">
+              <div class="section-subtitle">
+                <span>调整后预算</span>
+                <div>
+                  <span class="actual-cost-title">实际已发生成本：¥{{ formatMoney(actualCostByCategory('LABOR')) }}</span>
+                  <span> | 调整后预算合计：¥ {{ formatMoney(categoryTotal('LABOR')) }}</span>
+                </div>
+              </div>
+              <el-table v-if="adjustedItems.LABOR.length > 0" :data="adjustedItems.LABOR" size="small" style="width: 100%">
+                <el-table-column label="岗位" min-width="160">
                   <template #default="{ row }">
                     <el-select v-model="row.positionId" size="small" filterable placeholder="请选择岗位"
                       @change="handlePositionChange(row)">
@@ -126,36 +165,35 @@
                     </el-select>
                   </template>
                 </el-table-column>
-                <el-table-column label="工时(小时)" width="120">
+                <el-table-column label="工时(小时)" min-width="100">
                   <template #default="{ row }">
-                    <el-input-number v-model="row.hours" :min="0" size="small" @change="calcLaborAmount(row)" />
+                    <el-input-number v-model="row.hours" :min="0" :step="8" size="small" controls-position="right" @change="calcLaborAmount(row)" />
                   </template>
                 </el-table-column>
-                <el-table-column label="成本定额(元/时)" width="140">
+                <el-table-column label="成本定额(元/时)" min-width="120">
                   <template #default="{ row }">
                     <el-input-number v-model="row.costRate" :min="0" :precision="2" size="small" disabled
                       :class="{ 'zero-rate': row.costRate === 0 }" />
                   </template>
                 </el-table-column>
-                <el-table-column label="金额" width="140">
+                <el-table-column label="金额" min-width="100">
                   <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
                 </el-table-column>
-                <el-table-column label="操作" width="80">
+                <el-table-column label="操作" min-width="70">
                   <template #default="{ $index }">
-                    <el-button link type="danger" size="small" @click="removeItem('LABOR', $index)"
-                      :disabled="form.items.LABOR.length <= 1">删除</el-button>
+                    <el-button link type="danger" size="small" @click="removeFromAdjust('LABOR', $index)">移除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
+              <div v-else class="empty-placeholder">暂未调整</div>
               <el-button size="small" @click="addItem('LABOR')" style="margin-top: 8px">
-                <el-icon><Plus /></el-icon> 添加人员
+                <el-icon><Plus /></el-icon> 添加角色
               </el-button>
-              <div class="section-total">合计：¥ {{ formatMoney(categoryTotal('LABOR')) }} 元人民币</div>
             </div>
           </div>
         </div>
 
-        <!-- 3. 采购科目 -->
+        <!-- 采购科目 -->
         <div class="category-section">
           <div class="section-header">
             <span class="section-title">采购</span>
@@ -166,58 +204,69 @@
           </div>
           <div class="section-body">
             <div class="section-left">
+              <div class="section-subtitle">
+                <span>调整前预算</span>
+                <span>调整前预算合计：¥ {{ formatMoney(leftProcurementTotal) }}</span>
+              </div>
               <el-table :data="leftProcurementItems" size="small">
-                <el-table-column label="BOM项" width="180">
+                <el-table-column label="BOM项" width="140">
                   <template #default="{ row }">{{ row.bomItem }}</template>
                 </el-table-column>
-                <el-table-column label="数量" width="100">
+                <el-table-column label="数量" width="80">
                   <template #default="{ row }">{{ row.qty }}</template>
                 </el-table-column>
-                <el-table-column label="单价" width="120">
+                <el-table-column label="单价" width="110">
                   <template #default="{ row }">{{ formatMoney(row.unitPrice) }}</template>
                 </el-table-column>
-                <el-table-column label="金额" width="140">
+                <el-table-column label="金额" width="110">
                   <template #default="{ row }">¥ {{ formatMoney(row.budgetAmount) }}</template>
                 </el-table-column>
               </el-table>
-              <div class="section-total">合计：¥ {{ formatMoney(leftProcurementTotal) }} 元人民币</div>
             </div>
             <div class="section-right">
-              <el-table :data="form.items.PROCUREMENT" size="small">
-                <el-table-column label="BOM项" width="180">
+              <div class="section-subtitle">
+                <span>调整后预算</span>
+                <div>
+                  <span class="actual-cost-title">实际已发生成本：¥{{ formatMoney(actualCostByCategory('PROCUREMENT')) }}</span>
+                  <span> | 调整后预算合计：¥ {{ formatMoney(categoryTotal('PROCUREMENT')) }}</span>
+                </div>
+              </div>
+              <el-table v-if="adjustedItems.PROCUREMENT.length > 0" :data="adjustedItems.PROCUREMENT" size="small" style="width: 100%">
+                <el-table-column label="BOM项" min-width="140">
                   <template #default="{ row }">
                     <el-input v-model="row.bomItem" size="small" placeholder="BOM项名称" />
                   </template>
                 </el-table-column>
-                <el-table-column label="数量" width="100">
+                <el-table-column label="数量" min-width="80">
                   <template #default="{ row }">
                     <el-input-number v-model="row.qty" :min="0" size="small" @change="calcProcurementAmount(row)" />
                   </template>
                 </el-table-column>
-                <el-table-column label="单价" width="120">
+                <el-table-column label="单价" min-width="100">
                   <template #default="{ row }">
                     <el-input-number v-model="row.unitPrice" :min="0" :precision="2" size="small" @change="calcProcurementAmount(row)" />
                   </template>
                 </el-table-column>
-                <el-table-column label="金额" width="140">
-                  <template #default="{ row }">¥ {{ formatMoney(row.amount) }}</template>
+                <el-table-column label="金额" min-width="110">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.amount" :min="0" :step="1000" size="small" controls-position="right" @change="onProcurementAmountChange(row)" />
+                  </template>
                 </el-table-column>
-                <el-table-column label="操作" width="80">
+                <el-table-column label="操作" min-width="70">
                   <template #default="{ $index }">
-                    <el-button link type="danger" size="small" @click="removeItem('PROCUREMENT', $index)"
-                      :disabled="form.items.PROCUREMENT.length <= 1">删除</el-button>
+                    <el-button link type="danger" size="small" @click="removeFromAdjust('PROCUREMENT', $index)">移除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
+              <div v-else class="empty-placeholder">暂未调整</div>
               <el-button size="small" @click="addItem('PROCUREMENT')" style="margin-top: 8px">
-                <el-icon><Plus /></el-icon> 添加BOM项
+                <el-icon><Plus /></el-icon> 添加采购项
               </el-button>
-              <div class="section-total">合计：¥ {{ formatMoney(categoryTotal('PROCUREMENT')) }} 元人民币</div>
             </div>
           </div>
         </div>
 
-        <!-- 4. 其他科目 -->
+        <!-- 其他科目 -->
         <div class="category-section">
           <div class="section-header">
             <span class="section-title">其他科目</span>
@@ -228,41 +277,73 @@
           </div>
           <div class="section-body">
             <div class="section-left">
+              <div class="section-subtitle">
+                <span>调整前预算</span>
+                <span>调整前预算合计：¥ {{ formatMoney(leftOtherTotal) }}</span>
+              </div>
               <div class="other-categories-row">
-                <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
+                <template v-for="(cat, idx) in otherCategoryList.slice(0, 3)" :key="cat.value">
                   <div class="other-cat-item">
                     <label class="other-cat-label">{{ cat.label }}</label>
                     <span class="other-cat-value">¥ {{ formatMoney(getLeftOtherAmount(cat.value)) }}</span>
                   </div>
-                  <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
+                  <span class="other-plus-operator">+</span>
                 </template>
               </div>
-              <div class="section-total">合计：¥ {{ formatMoney(leftOtherTotal) }} 元人民币</div>
-            </div>
-            <div class="section-right">
-              <div class="other-categories-row">
-                <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
+              <div class="other-categories-row" style="margin-top: 8px;">
+                <template v-for="(cat, idx) in otherCategoryList.slice(3)" :key="cat.value">
                   <div class="other-cat-item">
                     <label class="other-cat-label">{{ cat.label }}</label>
+                    <span class="other-cat-value">¥ {{ formatMoney(getLeftOtherAmount(cat.value)) }}</span>
+                  </div>
+                  <span v-if="idx < 1" class="other-plus-operator">+</span>
+                </template>
+                <div class="other-cat-item other-cat-spacer"></div>
+                <span class="other-plus-operator other-plus-spacer">+</span>
+              </div>
+            </div>
+            <div class="section-right">
+              <div class="section-subtitle">
+                <span>调整后预算</span>
+                <div>
+                  <span class="actual-cost-title">实际已发生成本：¥{{ formatMoney(totalOtherActualCost()) }}</span>
+                  <span> | 调整后预算合计：¥ {{ formatMoney(otherTotal) }}</span>
+                </div>
+              </div>
+              <div class="other-categories-row" v-if="visibleOtherCategories.length > 0">
+                <template v-for="(cat, idx) in otherCategoryList.slice(0, 3)" :key="cat.value">
+                  <div v-if="adjustedItems[cat.value].length > 0" class="other-cat-item other-cat-adjust-item">
+                    <label class="other-cat-label">{{ cat.label }}（实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}）</label>
                     <el-input-number
-                      v-model="form.items[cat.value][0].amount"
-                      :min="0"
-                      :precision="2"
-                      size="small"
-                      controls-position="right"
+                      v-model="adjustedItems[cat.value][0].amount"
+                      :min="parseFloat(actualCostByCategory(cat.value))"
+                      :precision="2" :step="1000" size="small" controls-position="right"
                     />
                   </div>
-                  <span v-if="idx < otherCategoryList.length - 1" class="other-plus-operator">+</span>
+                  <span class="other-plus-operator">+</span>
                 </template>
               </div>
-              <div class="section-total">合计：¥ {{ formatMoney(otherTotal) }} 元人民币</div>
+              <div class="other-categories-row" style="margin-top: 8px;">
+                <template v-for="(cat, idx) in otherCategoryList.slice(3)" :key="cat.value">
+                  <div v-if="adjustedItems[cat.value].length > 0" class="other-cat-item other-cat-adjust-item">
+                    <label class="other-cat-label">{{ cat.label }}（实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}）</label>
+                    <el-input-number
+                      v-model="adjustedItems[cat.value][0].amount"
+                      :min="parseFloat(actualCostByCategory(cat.value))"
+                      :precision="2" :step="1000" size="small" controls-position="right"
+                    />
+                  </div>
+                  <span v-if="idx < 1" class="other-plus-operator">+</span>
+                </template>
+                <div class="other-cat-item other-cat-spacer"></div>
+                <span class="other-plus-operator other-plus-spacer">+</span>
+              </div>
             </div>
           </div>
         </div>
 
         <el-divider>预算汇总</el-divider>
 
-        <!-- 5. 预算汇总对比 -->
         <div class="category-section">
           <div class="section-header">
             <span class="section-title">预算汇总</span>
@@ -276,17 +357,33 @@
               <div class="budget-summary-row">
                 <div class="summary-item">
                   <label>总预算</label>
-                  <div class="summary-value highlight">¥ {{ formatMoney(leftTotalBudget) }} 元人民币</div>
+                  <div class="summary-value highlight">¥ {{ formatMoney(leftTotalBudget) }}</div>
                 </div>
                 <div class="summary-operator">=</div>
                 <div class="summary-item">
                   <label>项目直接预算</label>
-                  <div class="summary-value">¥ {{ formatMoney(leftCostBaseline) }} 元人民币</div>
+                  <div class="summary-value">¥ {{ formatMoney(leftCostBaseline) }}</div>
                 </div>
                 <div class="summary-operator">+</div>
                 <div class="summary-item">
                   <label>项目管理预算</label>
-                  <div class="summary-value">¥ {{ formatMoney(parseFloat(originalData.budget?.managementReserve) || 0) }} 元人民币</div>
+                  <div class="summary-value">¥ {{ formatMoney(parseFloat(originalData.budget?.managementReserve) || 0) }}</div>
+                </div>
+              </div>
+              <div class="budget-summary-row summary-actual-row">
+                <div class="summary-item">
+                  <label>实际成本总额</label>
+                  <div class="summary-value highlight" style="color: #67C23A;">¥ {{ formatMoney(totalActualCost) }}</div>
+                </div>
+                <div class="summary-operator">=</div>
+                <div class="summary-item">
+                  <label>项目直接实际成本</label>
+                  <div class="summary-value" style="color: #67C23A;">¥ {{ formatMoney(totalActualCost) }}</div>
+                </div>
+                <div class="summary-operator">+</div>
+                <div class="summary-item">
+                  <label>管理实际成本</label>
+                  <div class="summary-value" style="color: #67C23A;">¥ 0.00</div>
                 </div>
               </div>
             </div>
@@ -294,12 +391,12 @@
               <div class="budget-summary-row">
                 <div class="summary-item">
                   <label>总预算</label>
-                  <div class="summary-value highlight">¥ {{ formatMoney(totalBudget) }} 元人民币</div>
+                  <div class="summary-value highlight">¥ {{ formatMoney(totalBudget) }}</div>
                 </div>
                 <div class="summary-operator">=</div>
                 <div class="summary-item">
                   <label>项目直接预算</label>
-                  <div class="summary-value">¥ {{ formatMoney(costBaseline) }} 元人民币</div>
+                  <div class="summary-value">¥ {{ formatMoney(costBaseline) }}</div>
                 </div>
                 <div class="summary-operator">+</div>
                 <div class="summary-item input-item">
@@ -311,7 +408,6 @@
           </div>
         </div>
 
-        <!-- 6. 操作按钮 -->
         <div class="form-actions">
           <el-button type="primary" @click="handleUpgrade" :loading="submitting">升级</el-button>
           <el-button @click="$router.back()">返回</el-button>
@@ -322,7 +418,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onActivated, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, onActivated, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -352,18 +448,50 @@ const otherCategoryList = [
   { label: '其他', value: 'OTHER' }
 ]
 
+const singleValueCategories = new Set(otherCategoryList.map(c => c.value))
+
+let nextId = 0
+const adjustedItems = reactive({
+  LABOR: [],
+  PROCUREMENT: [],
+  TRAVEL: [],
+  BUSINESS: [],
+  ENTERTAINMENT: [],
+  ACTIVITY: [],
+  OTHER: []
+})
+
+const createAdjustedItem = (category, originalItem) => {
+  const base = { _key: nextId++, originalId: originalItem?.id || null }
+  if (category === 'LABOR') {
+    return {
+      ...base,
+      roleCode: originalItem?.roleCode || 'DEV',
+      positionId: originalItem?.positionId || '',
+      hours: originalItem?.hours || 0,
+      costRate: originalItem?.costRate || 0,
+      amount: originalItem?.budgetAmount || 0
+    }
+  }
+  if (category === 'PROCUREMENT') {
+    return {
+      ...base,
+      bomItem: originalItem?.bomItem || '',
+      qty: originalItem?.qty || 0,
+      unitPrice: originalItem?.unitPrice || 0,
+      amount: originalItem?.budgetAmount || 0,
+      manualAdjustment: 0
+    }
+  }
+  return {
+    ...base,
+    amount: originalItem?.budgetAmount || 0
+  }
+}
+
 const form = ref({
   projectId: '',
-  managementReserve: 0,
-  items: {
-    LABOR: [{ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 }],
-    PROCUREMENT: [{ bomItem: '', qty: 0, unitPrice: 0, amount: 0 }],
-    TRAVEL: [{ amount: 0 }],
-    BUSINESS: [{ amount: 0 }],
-    ENTERTAINMENT: [{ amount: 0 }],
-    ACTIVITY: [{ amount: 0 }],
-    OTHER: [{ amount: 0 }]
-  }
+  managementReserve: 0
 })
 
 const rules = {
@@ -393,12 +521,81 @@ const projectName = computed(() => {
   return p?.projectName || ''
 })
 
+const visibleOtherCategories = computed(() =>
+  otherCategoryList.filter(cat => adjustedItems[cat.value].length > 0)
+)
+
+// Actual cost by category
+const actualCostByCategory = (category) => {
+  if (category === 'OTHER') {
+    let total = 0
+    for (const cat of otherCategoryList) {
+      total += allItems.value.filter(i => i.category === cat.value).reduce((s, i) => s + (i.actualAmount || 0), 0)
+    }
+    return total
+  }
+  return allItems.value.filter(i => i.category === category).reduce((s, i) => s + (i.actualAmount || 0), 0)
+}
+
+const totalActualCost = computed(() => {
+  return allItems.value.reduce((s, i) => s + (i.actualAmount || 0), 0)
+})
+
+const totalOtherActualCost = () => {
+  let total = 0
+  for (const cat of otherCategoryList) {
+    total += actualCostByCategory(cat.value)
+  }
+  return total
+}
+
+const actualAmountMap = computed(() => {
+  const map = {}
+  for (const item of (originalData.value.items || [])) {
+    if (item.id) {
+      map[item.id] = parseFloat(item.actualAmount) || 0
+    }
+  }
+  return map
+})
+
+const getActualAmount = (originalId) => {
+  if (originalId && actualAmountMap.value[originalId] !== undefined) {
+    return actualAmountMap.value[originalId]
+  }
+  return 0
+}
+
+const adjustedOriginalIds = computed(() => {
+  const ids = new Set()
+  for (const cat of allCategories) {
+    for (const item of adjustedItems[cat.value] || []) {
+      if (item.originalId) ids.add(item.originalId)
+    }
+  }
+  return ids
+})
+
+const mergedCategoryTotal = (category) => {
+  if (singleValueCategories.has(category) && adjustedItems[category].length > 0) {
+    return adjustedItems[category].reduce((s, i) => s + (i.amount || 0), 0)
+  }
+  let total = 0
+  for (const item of (adjustedItems[category] || [])) {
+    total += item.amount || 0
+  }
+  for (const item of (originalData.value.items || [])) {
+    if (item.category === category && !adjustedOriginalIds.value.has(item.id)) {
+      total += parseFloat(item.budgetAmount) || 0
+    }
+  }
+  return total
+}
+
 const costBaseline = computed(() => {
   let total = 0
-  for (const key of Object.keys(form.value.items)) {
-    for (const item of form.value.items[key]) {
-      total += item.amount || 0
-    }
+  for (const cat of allCategories) {
+    total += mergedCategoryTotal(cat.value)
   }
   return total
 })
@@ -408,7 +605,7 @@ const totalBudget = computed(() => costBaseline.value + (form.value.managementRe
 const otherTotal = computed(() => {
   let total = 0
   for (const cat of otherCategoryList) {
-    total += form.value.items[cat.value]?.[0]?.amount || 0
+    total += mergedCategoryTotal(cat.value)
   }
   return total
 })
@@ -429,12 +626,10 @@ const roleLabel = (code) => {
 }
 
 const categoryTotal = (category) => {
-  const items = form.value.items[category] || []
-  return items.reduce((sum, item) => sum + (item.amount || 0), 0)
+  return mergedCategoryTotal(category)
 }
 
-// ========== 差异计算 ==========
-
+// --- 差异计算 ---
 const safePercent = (diff, base) => {
   if (base) return (diff / base) * 100
   return diff !== 0 ? 100 : 0
@@ -476,17 +671,22 @@ const diffColor = (val) => val > 0 ? '#F56C6C' : val < 0 ? '#67C23A' : '#909399'
 const diffSign = (val) => val > 0 ? '+' : ''
 const diffStyle = (val) => ({ color: diffColor(val) })
 
-// ========== 未保存修改检测 ==========
-
+// --- 未保存修改检测 ---
 const isDirty = ref(false)
 
 const hasUnsavedChanges = () => {
   if (Math.abs((form.value.managementReserve || 0) - (parseFloat(originalData.value.budget?.managementReserve) || 0)) > 0.01) return true
-  if (Math.abs(costBaseline.value - leftCostBaseline.value) > 0.01) return true
+  for (const cat of allCategories) {
+    if ((adjustedItems[cat.value] || []).length > 0) return true
+  }
   return false
 }
 
-watch(form, () => {
+watch(() => form.value.managementReserve, () => {
+  isDirty.value = hasUnsavedChanges()
+})
+
+watch(adjustedItems, () => {
   isDirty.value = hasUnsavedChanges()
 }, { deep: true })
 
@@ -532,17 +732,14 @@ watch(() => route.params.id, (newId) => {
   }
 })
 
-// ========== 业务逻辑（保持不变） ==========
-
+// --- 业务逻辑 ---
 const calcLaborAmount = (row) => {
   row.amount = (row.hours || 0) * (row.costRate || 0)
 }
 
 const calcProcurementAmount = (row) => {
-  row.amount = (row.qty || 0) * (row.unitPrice || 0)
+  row.amount = (row.qty || 0) * (row.unitPrice || 0) + (row.manualAdjustment || 0)
 }
-
-const calcTotals = () => {}
 
 const handlePositionChange = async (row) => {
   if (!row.positionId) {
@@ -551,14 +748,12 @@ const handlePositionChange = async (row) => {
     calcLaborAmount(row)
     return
   }
-
   try {
     const res = await getCurrentRateApi(row.positionId)
     const data = res.data
     const newRate = (data && data.costRate !== undefined && data.costRate !== null)
       ? parseFloat(data.costRate) : 0
     row.costRate = newRate
-
     const pos = positionList.value.find(p => p.id === row.positionId)
     if (pos) {
       row.roleCode = pos.name || ''
@@ -570,25 +765,75 @@ const handlePositionChange = async (row) => {
   }
 }
 
+const removeFromAdjust = (category, index) => {
+  adjustedItems[category].splice(index, 1)
+}
+
+const onProcurementAmountChange = (row) => {
+  const baseAmount = (row.qty || 0) * (row.unitPrice || 0)
+  row.manualAdjustment = (row.amount || 0) - baseAmount
+}
+
 const addItem = (category) => {
-  if (category === 'LABOR') {
-    form.value.items.LABOR.push({ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 })
-  } else if (category === 'PROCUREMENT') {
-    form.value.items.PROCUREMENT.push({ bomItem: '', qty: 0, unitPrice: 0, amount: 0 })
+  const newItem = createAdjustedItem(category, null)
+  adjustedItems[category].push(newItem)
+}
+
+// Auto-populate all original items into adjusted
+const populateAllAdjustItems = () => {
+  for (const cat of allCategories) {
+    adjustedItems[cat.value].length = 0
+    const items = allItems.value.filter(i => i.category === cat.value)
+    for (const item of items) {
+      const newItem = createAdjustedItem(cat.value, item)
+      adjustedItems[cat.value].push(newItem)
+    }
   }
 }
 
-const removeItem = (category, index) => {
-  if (form.value.items[category].length > 1) {
-    form.value.items[category].splice(index, 1)
+const hasCategoryBudgetBelowActual = (category) => {
+  return mergedCategoryTotal(category) < actualCostByCategory(category)
+}
+
+const findItemsBelowActual = () => {
+  const belowItems = []
+  // LABOR/PROCUREMENT: check category total >= actual total
+  for (const cat of [{ label: '人工', value: 'LABOR' }, { label: '采购', value: 'PROCUREMENT' }]) {
+    const catTotal = mergedCategoryTotal(cat.value)
+    const catActual = actualCostByCategory(cat.value)
+    if (catActual > 0 && catTotal < catActual) {
+      belowItems.push({ category: cat.label, amount: catTotal, actual: catActual, isCategory: true })
+    }
   }
+  // OTHER: check per-item
+  for (const cat of otherCategoryList) {
+    for (const item of (adjustedItems[cat.value] || [])) {
+      const actual = getActualAmount(item.originalId)
+      if (actual > 0 && (item.amount || 0) < actual) {
+        belowItems.push({ category: cat.label, amount: item.amount || 0, actual })
+      }
+    }
+  }
+  return belowItems
 }
 
 const handleUpgrade = async () => {
   try {
     await formRef.value.validate()
-    submitting.value = true
 
+    // Validate adjusted amounts vs actual costs
+    const belowItems = findItemsBelowActual()
+    if (belowItems.length > 0) {
+      const details = belowItems.slice(0, 3).map(i => {
+        if (i.isCategory) return `${i.category}合计(调整后¥${formatMoney(i.amount)} < 实际¥${formatMoney(i.actual)})`
+        return `${i.category}(调整后¥${formatMoney(i.amount)} < 实际¥${formatMoney(i.actual)})`
+      }).join('；')
+      const suffix = belowItems.length > 3 ? ` 等${belowItems.length}项` : ''
+      ElMessage.error(`调整后预算不能低于实际已发生成本：${details}${suffix}`)
+      return
+    }
+
+    submitting.value = true
     const data = {
       projectId: form.value.projectId,
       managementReserve: form.value.managementReserve.toString(),
@@ -596,7 +841,8 @@ const handleUpgrade = async () => {
     }
 
     await upgradeBudgetApi(route.params.id, data)
-    ElMessage.success('预算升级已提交审批')
+    ElMessage.success('预算升级草稿已保存')
+    isDirty.value = false
     router.push('/pm/budget')
   } catch (e) {
     if (e !== 'cancel') ElMessage.error('升级失败')
@@ -614,8 +860,7 @@ const allCategories = [
 const buildItemsTree = () => {
   const items = []
   for (const cat of allCategories) {
-    const catItems = form.value.items[cat.value] || []
-    for (const item of catItems) {
+    for (const item of (adjustedItems[cat.value] || [])) {
       items.push({
         category: cat.value,
         amount: (item.amount || 0).toString(),
@@ -628,6 +873,23 @@ const buildItemsTree = () => {
         qty: item.qty?.toString(),
         unitPrice: item.unitPrice?.toString()
       })
+    }
+    if (singleValueCategories.has(cat.value) && adjustedItems[cat.value].length > 0) continue
+    for (const orig of (originalData.value.items || [])) {
+      if (orig.category === cat.value && !adjustedOriginalIds.value.has(orig.id)) {
+        items.push({
+          category: orig.category,
+          amount: (orig.budgetAmount || 0).toString(),
+          level: 1,
+          roleCode: orig.roleCode,
+          positionId: orig.positionId,
+          hours: orig.hours?.toString(),
+          costRate: orig.costRate?.toString(),
+          bomItem: orig.bomItem,
+          qty: orig.qty?.toString(),
+          unitPrice: orig.unitPrice?.toString()
+        })
+      }
     }
   }
   return items
@@ -649,6 +911,11 @@ const loadProjects = async () => {
 
 const loadOriginalData = async () => {
   if (!route.params.id) return
+
+  for (const cat of allCategories) {
+    adjustedItems[cat.value].length = 0
+  }
+
   try {
     const res = await getBudgetDetailWithItemsApi(route.params.id)
     originalData.value = res.data || { budget: {}, items: [] }
@@ -657,33 +924,10 @@ const loadOriginalData = async () => {
     form.value.projectId = data.budget?.projectId || ''
     form.value.managementReserve = parseFloat(data.budget?.managementReserve) || 0
 
-    if (data.items) {
-      const laborItems = data.items.filter(i => i.category === 'LABOR')
-      const procurementItems = data.items.filter(i => i.category === 'PROCUREMENT')
-      if (laborItems.length > 0) {
-        form.value.items.LABOR = laborItems.map(i => ({
-          roleCode: i.roleCode || 'DEV',
-          positionId: i.positionId || '',
-          hours: parseFloat(i.hours) || 0,
-          costRate: parseFloat(i.costRate) || 0,
-          amount: parseFloat(i.budgetAmount) || 0
-        }))
-      }
-      if (procurementItems.length > 0) {
-        form.value.items.PROCUREMENT = procurementItems.map(i => ({
-          bomItem: i.bomItem || '',
-          qty: parseFloat(i.qty) || 0,
-          unitPrice: parseFloat(i.unitPrice) || 0,
-          amount: parseFloat(i.budgetAmount) || 0
-        }))
-      }
-      for (const cat of otherCategoryList) {
-        const otherItems = data.items.filter(i => i.category === cat.value)
-        if (otherItems.length > 0) {
-          form.value.items[cat.value][0].amount = parseFloat(otherItems[0].budgetAmount) || 0
-        }
-      }
-    }
+    // Auto-populate all original items into adjusted
+    populateAllAdjustItems()
+
+    isDirty.value = false
   } catch (e) {
     ElMessage.error('加载原预算数据失败')
   }
@@ -697,7 +941,6 @@ const loadOriginalData = async () => {
   align-items: center;
 }
 
-/* 项目信息栏 + 全局差异面板 */
 .project-info-bar {
   display: flex;
   justify-content: space-between;
@@ -730,45 +973,107 @@ const loadOriginalData = async () => {
   color: #303133;
 }
 
-/* 全局差异面板 */
-.global-diff-panel {
-  width: 280px;
-  flex-shrink: 0;
+.waterfall-panel {
   background: #f5f7fa;
   border: 1px solid #e4e7ed;
   border-radius: 6px;
   padding: 12px 16px;
+  margin-bottom: 16px;
 }
 
-.diff-title {
-  font-size: 13px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 8px;
-}
-
-.diff-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: #606266;
-  line-height: 24px;
-}
-
-.diff-row.sub-total {
-  font-weight: bold;
-  color: #303133;
-}
-
-.diff-row.total {
-  font-weight: bold;
+.waterfall-title {
   font-size: 14px;
+  font-weight: bold;
   color: #303133;
+  margin-bottom: 10px;
+}
+
+.waterfall-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wf-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.wf-header {
+  font-size: 12px;
+  color: #909399;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+}
+
+.wf-label {
+  width: 100px;
+  flex-shrink: 0;
+  color: #606266;
+}
+
+.wf-header .wf-label {
+  color: #909399;
+}
+
+.wf-amount-label {
+  width: 140px;
+  text-align: right;
+  font-size: 12px;
+  color: #909399;
+}
+
+.wf-amount {
+  width: 140px;
+  text-align: right;
+  color: #303133;
+  font-variant-numeric: tabular-nums;
+}
+
+.wf-arrow {
+  width: 30px;
+  text-align: center;
+  color: #909399;
+}
+
+.wf-diff-label {
+  width: 200px;
+  text-align: right;
+  font-size: 12px;
+  color: #909399;
+}
+
+.wf-diff-col {
+  width: 200px;
+  text-align: right;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.wf-subtotal {
+  border-top: 1px solid #ebeef5;
+  padding-top: 6px;
   margin-top: 2px;
 }
 
-/* 科目区块 */
+.wf-subtotal .wf-label,
+.wf-total .wf-label {
+  font-weight: bold;
+  color: #303133;
+}
+
+.wf-total {
+  border-top: 1px solid #dcdfe6;
+  padding-top: 6px;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
 .category-section {
   margin-bottom: 24px;
   border: 1px solid #ebeef5;
@@ -793,35 +1098,34 @@ const loadOriginalData = async () => {
 
 .section-body {
   display: flex;
-  gap: 16px;
   padding: 16px;
 }
 
-.section-left,
-.section-right {
+.section-left {
   flex: 1;
   min-width: 0;
+  padding: 0 12px;
+  border-right: 1px dashed #dcdfe6;
+}
+
+.section-right {
+  flex: 2;
+  min-width: 0;
+  padding: 0 12px;
 }
 
 .section-subtitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 13px;
   font-weight: bold;
   color: #606266;
   margin-bottom: 8px;
-  padding-left: 4px;
-  border-left: 3px solid #409eff;
   padding: 2px 0 2px 10px;
+  border-left: 3px solid #409eff;
 }
 
-.section-total {
-  text-align: right;
-  font-size: 14px;
-  font-weight: bold;
-  color: #409eff;
-  margin-top: 8px;
-}
-
-/* 差异徽章 */
 .diff-badge {
   display: inline-flex;
   align-items: center;
@@ -840,16 +1144,44 @@ const loadOriginalData = async () => {
   opacity: 0.85;
 }
 
-/* 其他科目 */
+.category-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #ebeef5;
+  font-size: 13px;
+  color: #606266;
+}
+
+.actual-cost-tag {
+  color: #e6a23c;
+  font-weight: bold;
+}
+
+.validation-hint {
+  font-size: 11px;
+  color: #e6a23c;
+  font-weight: normal;
+}
+
 .other-categories-row {
   display: flex;
-  gap: 40px;
+  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
 }
 
 .other-cat-item {
-  width: 140px;
-  flex-shrink: 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.other-cat-spacer,
+.other-plus-spacer {
+  visibility: hidden;
 }
 
 .other-cat-label {
@@ -873,13 +1205,31 @@ const loadOriginalData = async () => {
   margin-bottom: 8px;
 }
 
-/* 预算汇总 */
+.other-cat-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty-placeholder {
+  color: #909399;
+  font-size: 13px;
+  padding: 16px 0;
+  text-align: center;
+  width: 100%;
+}
+
 .budget-summary-row {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: 24px;
-  padding: 16px 0;
+  padding: 8px 0;
+}
+
+.summary-actual-row {
+  border-top: 1px dashed #dcdfe6;
+  padding-top: 8px;
 }
 
 .summary-item {
@@ -893,13 +1243,13 @@ const loadOriginalData = async () => {
 
 .summary-item label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .summary-value {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: bold;
   color: #303133;
 }
@@ -909,7 +1259,7 @@ const loadOriginalData = async () => {
 }
 
 .summary-operator {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: bold;
   color: #909399;
   margin-bottom: 4px;
@@ -919,13 +1269,35 @@ const loadOriginalData = async () => {
   width: 100%;
 }
 
-/* 操作按钮 */
 .form-actions {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+}
+
+.actual-cost-col {
+  color: #67C23A;
+  font-weight: bold;
+}
+
+.actual-cost-inline {
+  color: #67C23A;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.actual-cost-title {
+  color: #67C23A;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.actual-cost-sub {
+  color: #67C23A;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 :deep(.zero-rate .el-input__inner) {

@@ -182,10 +182,13 @@ const showDetail = (row) => {
 
 const loadData = async () => {
   if (!route.path.startsWith('/pm/budget/comparison')) return
+  const budgetId = route.query.budgetId
+  if (!budgetId) {
+    ElMessage.warning('缺少预算ID参数')
+    return
+  }
   loading.value = true
   try {
-    const budgetId = route.query.budgetId || route.params.projectId
-    if (!budgetId) return
     const res = await getBudgetComparisonApi(budgetId, selectedVersion.value ? { version: selectedVersion.value } : {})
     data.value = res.data
     projectName.value = res.data.projectName || ''
@@ -200,24 +203,21 @@ const loadVersions = async () => {
   try {
     const res = await getBudgetVersionsApi(route.params.projectId)
     versions.value = res.data || []
-    if (versions.value.length > 0) {
-      selectedVersion.value = versions.value[0].version
-    }
   } catch (e) {
     // No versions available
   }
 }
 
-onMounted(async () => {
-  await loadVersions()
+onMounted(() => {
+  loadVersions()
   loadData()
 })
 
-watch([() => route.params.projectId, () => route.query.budgetId], async ([newProjectId], [oldProjectId]) => {
-  if (newProjectId !== oldProjectId) {
-    await loadVersions()
+watch(() => route.query.budgetId, (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    loadVersions()
+    loadData()
   }
-  loadData()
 })
 </script>
 

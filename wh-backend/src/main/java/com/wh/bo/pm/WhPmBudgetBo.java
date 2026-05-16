@@ -17,6 +17,7 @@ import com.wh.vo.pm.BudgetComparisonVO;
 import com.wh.vo.pm.BudgetDetailVO;
 import com.wh.vo.pm.BudgetItemVO;
 import com.wh.vo.pm.BudgetVersionVO;
+import com.wh.vo.pm.ProjectBudgetVO;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -93,6 +94,141 @@ public class WhPmBudgetBo {
                 return charter == null || !pmId.equals(charter.getPmId());
             });
         }
+        return result;
+    }
+
+    public IPage<ProjectBudgetVO> pageProjectBudgets(int pageNum, int pageSize, String projectId, String pmId, String status) {
+        // Query all charters (projects)
+        LambdaQueryWrapper<com.wh.entity.pm.WhPmCharter> charterWrapper = new LambdaQueryWrapper<>();
+        charterWrapper.eq(com.wh.entity.pm.WhPmCharter::getDelFlag, "0");
+        if (projectId != null && !projectId.isEmpty()) {
+            charterWrapper.eq(com.wh.entity.pm.WhPmCharter::getId, projectId);
+        }
+        if (pmId != null && !pmId.isEmpty()) {
+            charterWrapper.eq(com.wh.entity.pm.WhPmCharter::getPmId, pmId);
+        }
+        charterWrapper.orderByDesc(com.wh.entity.pm.WhPmCharter::getCreateDate);
+        List<com.wh.entity.pm.WhPmCharter> charters = charterDao.selectList(charterWrapper);
+
+        // Collect charter IDs for budget and PM queries
+        Set<String> allProjectIds = charters.stream().map(com.wh.entity.pm.WhPmCharter::getId).collect(Collectors.toSet());
+
+        // Query budgets for these projects
+        LambdaQueryWrapper<WhPmBudget> budgetWrapper = new LambdaQueryWrapper<>();
+        budgetWrapper.eq(WhPmBudget::getDelFlag, "0")
+                .in(WhPmBudget::getProjectId, allProjectIds)
+                .orderByDesc(WhPmBudget::getCreateDate);
+        List<WhPmBudget> allBudgets = budgetDao.selectList(budgetWrapper);
+
+        // Find latest approved budget per project and track which projects have any budget
+        Map<String, WhPmBudget> latestApprovedMap = new HashMap<>();
+        Set<String> projectIdsWithBudgets = new HashSet<>();
+        for (WhPmBudget b : allBudgets) {
+            projectIdsWithBudgets.add(b.getProjectId());
+            if ("APPROVED".equals(b.getStatus())) {
+                latestApprovedMap.putIfAbsent(b.getProjectId(), b);
+            }
+        }
+
+        // Filter budgets by status if needed
+        if (status != null && !status.isEmpty()) {
+            allBudgets = allBudgets.stream()
+                    .filter(b -> status.equals(b.getStatus()))
+                    .collect(Collectors.toList());
+        }
+
+        // Group budgets by projectId
+        Map<String, List<WhPmBudget>> grouped = new LinkedHashMap<>();
+        for (WhPmBudget b : allBudgets) {
+            grouped.computeIfAbsent(b.getProjectId(), k -> new ArrayList<>()).add(b);
+        }
+
+        // Load item summaries for all budgets
+        Set<String> budgetIds = allBudgets.stream().map(WhPmBudget::getId).collect(Collectors.toSet());
+        Map<String, Map<String, BigDecimal>> itemSummaries = new HashMap<>(); // budgetId -> (category -> sum)
+        if (!budgetIds.isEmpty()) {
+            LambdaQueryWrapper<WhPmBudgetItem> itemWrapper = new LambdaQueryWrapper<>();
+            itemWrapper.in(WhPmBudgetItem::getBudgetId, budgetIds)
+                    .eq(WhPmBudgetItem::getDelFlag, "0");
+            List<WhPmBudgetItem> items = budgetItemDao.selectList(itemWrapper);
+            for (WhPmBudgetItem item : items) {
+                Map<String, BigDecimal> catMap = itemSummaries.computeIfAbsent(item.getBudgetId(), k -> new HashMap<>());
+                BigDecimal amount = catMap.getOrDefault(item.getCategory(), BigDecimal.ZERO);
+                catMap.put(item.getCategory(), amount.add(new BigDecimal(item.getAmount() != null ? item.getAmount() : "0")));
+            }
+        }
+
+        // Load PM names
+        Map<String, String> pmNameMap = new HashMap<>();
+        for (com.wh.entity.pm.WhPmCharter c : charters) {
+            if (c.getPmId() != null && !pmNameMap.containsKey(c.getPmId())) {
+                var user = sysUserDao.selectById(c.getPmId());
+                if (user != null) {
+                    pmNameMap.put(c.getPmId(), user.getRealName());
+                }
+            }
+        }
+
+        // Build VO list from charters (ensures projects without budgets appear)
+        List<ProjectBudgetVO> voList = new ArrayList<>();
+        for (com.wh.entity.pm.WhPmCharter charter : charters) {
+            String pid = charter.getId();
+            List<WhPmBudget> budgets = grouped.getOrDefault(pid, List.of());
+
+            // If filtering by status and this project has no matching budgets,
+            // still include it (shows 0 budget rows)
+            List<WhPmBudget> sortedBudgets = new ArrayList<>(budgets);
+            fillActualCosts(sortedBudgets);
+
+            // Populate item summaries on each budget
+            for (WhPmBudget b : sortedBudgets) {
+                Map<String, BigDecimal> catMap = itemSummaries.getOrDefault(b.getId(), Map.of());
+                b.setLaborAmount(formatDecimal(catMap.getOrDefault("LABOR", BigDecimal.ZERO)));
+                b.setProcurementAmount(formatDecimal(catMap.getOrDefault("PROCUREMENT", BigDecimal.ZERO)));
+                BigDecimal other = BigDecimal.ZERO;
+                for (Map.Entry<String, BigDecimal> e : catMap.entrySet()) {
+                    if (!"LABOR".equals(e.getKey()) && !"PROCUREMENT".equals(e.getKey())) {
+                        other = other.add(e.getValue());
+                    }
+                }
+                b.setOtherAmount(formatDecimal(other));
+            }
+
+            WhPmBudget latestApproved = latestApprovedMap.get(pid);
+
+            // Project-level cost from actual costs
+            Double projActualCost = actualCostDao.sumAmountByProjectId(pid);
+            double pActual = projActualCost != null ? projActualCost : 0.0;
+            double pBaseline = latestApproved != null ? parseDouble(latestApproved.getCostBaseline()) : 0.0;
+
+            ProjectBudgetVO vo = new ProjectBudgetVO();
+            vo.setProjectId(pid);
+            vo.setProjectName(charter.getProjectName());
+            vo.setProjectShortName(charter.getProjectShortName());
+            vo.setPmName(charter.getPmId() != null ? pmNameMap.get(charter.getPmId()) : null);
+            vo.setProjectStatus(charter.getStatus());
+            vo.setHasAnyBudget(projectIdsWithBudgets.contains(pid));
+            vo.setProjectActualCost(pActual);
+            vo.setProjectBudgetRemaining(pBaseline - pActual);
+            vo.setProjectCostRatio(pBaseline > 0 ? pActual / pBaseline : 0.0);
+            if (latestApproved != null) {
+                vo.setLatestApprovedVersion(latestApproved.getVersion());
+                vo.setLatestApprovedAmount(latestApproved.getCostBaseline());
+                vo.setLatestApprovedTotalBudget(latestApproved.getTotalBudget());
+                vo.setLatestApprovedBudgetId(latestApproved.getId());
+            }
+            vo.setBudgets(sortedBudgets);
+            voList.add(vo);
+        }
+
+        // Manual pagination at project level
+        int total = voList.size();
+        int fromIndex = (pageNum - 1) * pageSize;
+        int toIndex = Math.min(fromIndex + pageSize, total);
+        List<ProjectBudgetVO> pageRecords = fromIndex < total ? voList.subList(fromIndex, toIndex) : List.of();
+
+        IPage<ProjectBudgetVO> result = new Page<>(pageNum, pageSize, total);
+        result.setRecords(pageRecords);
         return result;
     }
 
@@ -382,7 +518,8 @@ public class WhPmBudgetBo {
         BigDecimal directBudget = new BigDecimal(budget.getCostBaseline());
         BigDecimal managementReserve = new BigDecimal(budget.getManagementReserve() != null ? budget.getManagementReserve() : "0");
         BigDecimal totalBudget = directBudget.add(managementReserve);
-        BigDecimal totalActual = sumActualForItems(itemVOs);
+        Double projActual = actualCostDao.sumAmountByProjectId(budget.getProjectId());
+        BigDecimal totalActual = BigDecimal.valueOf(projActual != null ? projActual : 0.0);
         vo.setDirectBudget(directBudget);
         vo.setTotalBudget(totalBudget);
         vo.setManagementReserve(managementReserve);
@@ -699,6 +836,10 @@ public class WhPmBudgetBo {
         } catch (NumberFormatException e) {
             return 0.0;
         }
+    }
+
+    private String formatDecimal(BigDecimal val) {
+        return val != null ? val.stripTrailingZeros().toPlainString() : "0";
     }
 
     private void collectUserId(String userId, Map<String, String> map) {

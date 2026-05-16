@@ -67,6 +67,11 @@
                   :disabled="form.items.LABOR.length <= 1">删除</el-button>
               </template>
             </el-table-column>
+            <el-table-column label="实际已发生成本" width="140">
+              <template #default="{ row }">
+                <span class="actual-cost-col">{{ formatMoney(row.actualAmount || 0) }}</span>
+              </template>
+            </el-table-column>
           </el-table>
           <el-button size="small" @click="addItem('LABOR')" style="margin-top: 8px">
             <el-icon><Plus /></el-icon> 添加人员
@@ -119,6 +124,11 @@
                   :disabled="form.items.PROCUREMENT.length <= 1">删除</el-button>
               </template>
             </el-table-column>
+            <el-table-column label="实际已发生成本" width="140">
+              <template #default="{ row }">
+                <span class="actual-cost-col">{{ formatMoney(row.actualAmount || 0) }}</span>
+              </template>
+            </el-table-column>
           </el-table>
           <el-button size="small" @click="addItem('PROCUREMENT')" style="margin-top: 8px">
             <el-icon><Plus /></el-icon> 添加BOM项
@@ -136,7 +146,9 @@
           <div class="other-categories-row">
             <template v-for="(cat, idx) in otherCategoryList" :key="cat.value">
               <div class="other-cat-item">
-                <label class="other-cat-label">{{ cat.label }}</label>
+                <label class="other-cat-label">{{ cat.label }}
+                  <span class="actual-cost-inline">（实际已发生：¥{{ formatMoney(getOtherActualCost(cat.value)) }}）</span>
+                </label>
                 <el-input-number
                   v-model="form.items[cat.value][0].amount"
                   :min="0"
@@ -278,6 +290,11 @@ const formatMoney = (val) => {
   return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const getOtherActualCost = (category) => {
+  const items = form.value.items[category] || []
+  return items.reduce((s, i) => s + (i.actualAmount || 0), 0)
+}
+
 const categoryTotal = (category) => {
   const items = form.value.items[category] || []
   return items.reduce((sum, item) => sum + (item.amount || 0), 0)
@@ -356,9 +373,9 @@ const calcTotals = () => {
 
 const addItem = (category) => {
   if (category === 'LABOR') {
-    form.value.items.LABOR.push({ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0 })
+    form.value.items.LABOR.push({ roleCode: 'DEV', positionId: '', hours: 0, costRate: 0, amount: 0, actualAmount: 0 })
   } else if (category === 'PROCUREMENT') {
-    form.value.items.PROCUREMENT.push({ bomItem: '', qty: 0, unitPrice: 0, amount: 0 })
+    form.value.items.PROCUREMENT.push({ bomItem: '', qty: 0, unitPrice: 0, amount: 0, actualAmount: 0 })
   }
 }
 
@@ -491,6 +508,7 @@ const loadData = async () => {
           hours: parseFloat(i.hours) || 0,
           costRate: parseFloat(i.costRate) || 0,
           amount: parseFloat(i.budgetAmount) || 0,
+          actualAmount: parseFloat(i.actualAmount) || 0,
           _savedCostRate: parseFloat(i.costRate) || 0
         }))
       }
@@ -499,13 +517,15 @@ const loadData = async () => {
           bomItem: i.bomItem || '',
           qty: parseFloat(i.qty) || 0,
           unitPrice: parseFloat(i.unitPrice) || 0,
-          amount: parseFloat(i.budgetAmount) || 0
+          amount: parseFloat(i.budgetAmount) || 0,
+          actualAmount: parseFloat(i.actualAmount) || 0
         }))
       }
       for (const cat of otherCategoryList) {
         const otherItems = data.items.filter(i => i.category === cat.value)
         if (otherItems.length > 0) {
           form.value.items[cat.value][0].amount = parseFloat(otherItems[0].budgetAmount) || 0
+          form.value.items[cat.value][0].actualAmount = parseFloat(otherItems[0].actualAmount) || 0
         }
       }
     }
@@ -633,6 +653,17 @@ watch(() => route.params.id, (newId) => {
   color: #909399;
   font-size: 16px;
 }
+.actual-cost-col {
+  color: #67C23A;
+  font-weight: bold;
+}
+
+.actual-cost-inline {
+  color: #67C23A;
+  font-size: 12px;
+  font-weight: normal;
+}
+
 :deep(.zero-rate .el-input__inner) {
   color: #f56c6c;
   font-weight: bold;

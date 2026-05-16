@@ -7,6 +7,7 @@ import com.wh.entity.pm.WhPmBudget;
 import com.wh.vo.pm.BudgetComparisonVO;
 import com.wh.vo.pm.BudgetDetailVO;
 import com.wh.vo.pm.BudgetVersionVO;
+import com.wh.vo.pm.ProjectBudgetVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,16 @@ public class WhPmBudgetController {
             @RequestParam(required = false) String pmId,
             @RequestParam(required = false) String status) {
         return R.ok(budgetBo.pageList(pageNum, pageSize, projectId, pmId, status));
+    }
+
+    @GetMapping("/projects")
+    public R<IPage<ProjectBudgetVO>> projectBudgets(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String projectId,
+            @RequestParam(required = false) String pmId,
+            @RequestParam(required = false) String status) {
+        return R.ok(budgetBo.pageProjectBudgets(pageNum, pageSize, projectId, pmId, status));
     }
 
     @GetMapping("/{id}")
@@ -63,7 +74,6 @@ public class WhPmBudgetController {
     @PostMapping("/{id}/upgrade")
     public R<WhPmBudget> upgrade(@PathVariable String id, @RequestBody BudgetUpdateRequest req) {
         WhPmBudget budget = budgetBo.upgradeCreate(id, req);
-        budgetBo.upgradeSubmit(budget.getId());
         return R.ok(budget);
     }
 

@@ -34,9 +34,10 @@ INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU003', 'MENU_PM', '预算管理', '/pm/budget', 'Money', 3, 'ROLE_PM', '1');
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU004', 'MENU_PM', '工时管理', '/pm/work-hours', 'Clock', 4, 'ROLE_PM', '1');
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU005', 'MENU_PM', '成果管理', '/pm/deliverable', 'Folder', 5, 'ROLE_PM,ROLE_SPONSOR', '1');
+INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU006', 'MENU_PM', '产品清单', '/pm/product', 'Tickets', 6, 'ROLE_PM', '1');
+
 
 -- 系统管理子菜单
-INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU006', 'MENU_SYS', '产品清单', '/pm/product', 'Tickets', 1, 'ROLE_PM', '1');
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU007', 'MENU_SYS', '用户管理', '/system/user', 'User', 2, 'ROLE_ADMIN', '1');
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU008', 'MENU_SYS', '工作日历', '/system/calendar', 'Calendar', 3, 'ROLE_ADMIN', '1');
 INSERT INTO sys_menu (ID, PARENT_ID, TITLE, PATH, ICON, SORT_ORDER, PERM, STATUS) VALUES ('MENU009', 'MENU_SYS', '成本定额', '/system/cost-quota', 'Money', 4, 'ROLE_ADMIN,ROLE_PM', '1');
