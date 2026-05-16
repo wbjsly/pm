@@ -19,7 +19,7 @@
         <el-table-column prop="sortOrder" label="排序" width="70" />
         <el-table-column prop="perm" label="角色" width="200">
           <template #default="{ row }">
-            <el-tag v-for="r in (row.perm || '').split(',').filter(Boolean)" :key="r" size="small" style="margin-right: 4px;">{{ r.trim() }}</el-tag>
+            <el-tag v-for="r in (row.perm || '').split(',').filter(Boolean)" :key="r" size="small" style="margin-right: 4px;">{{ roleMap[r.trim()] || r.trim() }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
@@ -111,6 +111,14 @@ const formRef = ref(null)
 const editId = ref('')
 const isEdit = ref(false)
 const roleOptions = ref([])
+
+const roleMap = computed(() => {
+  const map = {}
+  for (const r of roleOptions.value) {
+    map[r.roleCode] = r.roleName
+  }
+  return map
+})
 
 const form = reactive({
   title: '', path: '', icon: '', sortOrder: 0, perm: [], status: '1', parentId: ''

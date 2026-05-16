@@ -2,8 +2,10 @@ import { defineStore } from 'pinia'
 
 export const useTabStore = defineStore('tab', {
   state: () => ({
-    tabs: [],
-    activeTab: ''
+    tabs: [
+      { name: 'Dashboard', path: '/dashboard', title: '主页', closable: false }
+    ],
+    activeTab: '/dashboard'
   }),
   actions: {
     addTab(route) {
@@ -41,6 +43,17 @@ export const useTabStore = defineStore('tab', {
         if (next) {
           this.activeTab = next.path
         }
+      }
+    },
+    closeLeft(path) {
+      const idx = this.tabs.findIndex(t => t.path === path)
+      if (idx === -1) return
+      const toRemove = []
+      for (let i = 0; i < idx; i++) {
+        if (this.tabs[i].closable) toRemove.push(i)
+      }
+      for (let i = toRemove.length - 1; i >= 0; i--) {
+        this.tabs.splice(toRemove[i], 1)
       }
     },
     closeRight(path) {

@@ -156,7 +156,7 @@
               <el-tooltip content="预实对比" placement="top" v-if="row.latestApprovedBudgetId">
                 <el-button link type="success" @click="handleProjectComparison(row)" :icon="Document" />
               </el-tooltip>
-              <el-tooltip content="升级" placement="top" v-if="row.latestApprovedBudgetId && !hasDraftBudget(row)">
+              <el-tooltip content="升级" placement="top" v-if="row.latestApprovedBudgetId && !hasDraftOrPendingBudget(row)">
                 <el-button link type="primary" @click="handleProjectUpgrade(row)" :icon="Promotion" />
               </el-tooltip>
               <el-tooltip content="新增预算" placement="top" v-if="!row.hasAnyBudget">
@@ -245,8 +245,8 @@ const handleUpgrade = (row) => {
   router.push(`/pm/budget/upgrade/${row.id}`)
 }
 
-const hasDraftBudget = (row) => {
-  return row.children && row.children.some(c => c.status === 'DRAFT')
+const hasDraftOrPendingBudget = (row) => {
+  return row.children && row.children.some(c => c.status === 'DRAFT' || c.status === 'PENDING')
 }
 
 const handleProjectUpgrade = (row) => {
@@ -327,7 +327,12 @@ const handleProjectCreate = (row) => {
 }
 
 const handleEdit = (row) => {
-  router.push(`/pm/budget/form/${row.id}`)
+  const version = parseFloat(row.version)
+  if (version > 0.5) {
+    router.push(`/pm/budget/upgrade/${row.id}`)
+  } else {
+    router.push(`/pm/budget/form/${row.id}`)
+  }
 }
 
 const handleView = (row) => {

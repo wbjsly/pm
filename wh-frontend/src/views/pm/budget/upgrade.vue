@@ -53,6 +53,8 @@
               <span class="wf-arrow"></span>
               <span class="wf-amount-label">调整后</span>
               <span class="wf-diff-label">差异</span>
+              <span class="wf-actual-label">实际成本</span>
+              <span class="wf-ba-label">预算-实际</span>
             </div>
             <div class="wf-row">
               <span class="wf-label">人工</span>
@@ -62,6 +64,11 @@
               <span class="wf-diff-col" :style="diffStyle(diffData.labor.diff)">
                 {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
                 ({{ diffSign(diffData.labor.percent) }}{{ Math.abs(diffData.labor.percent).toFixed(1) }}%)
+              </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('labor')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('labor', categoryTotal('LABOR')))">
+                {{ diffSign(wfBmADiff('labor', categoryTotal('LABOR'))) }}¥{{ formatMoney(Math.abs(wfBmADiff('labor', categoryTotal('LABOR')))) }}
+                ({{ diffSign(wfBmAPercent('labor', categoryTotal('LABOR'))) }}{{ Math.abs(wfBmAPercent('labor', categoryTotal('LABOR'))).toFixed(1) }}%)
               </span>
             </div>
             <div class="wf-row">
@@ -73,6 +80,11 @@
                 {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
                 ({{ diffSign(diffData.procurement.percent) }}{{ Math.abs(diffData.procurement.percent).toFixed(1) }}%)
               </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('procurement')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('procurement', categoryTotal('PROCUREMENT')))">
+                {{ diffSign(wfBmADiff('procurement', categoryTotal('PROCUREMENT'))) }}¥{{ formatMoney(Math.abs(wfBmADiff('procurement', categoryTotal('PROCUREMENT')))) }}
+                ({{ diffSign(wfBmAPercent('procurement', categoryTotal('PROCUREMENT'))) }}{{ Math.abs(wfBmAPercent('procurement', categoryTotal('PROCUREMENT'))).toFixed(1) }}%)
+              </span>
             </div>
             <div class="wf-row">
               <span class="wf-label">其他</span>
@@ -82,6 +94,11 @@
               <span class="wf-diff-col" :style="diffStyle(diffData.other.diff)">
                 {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
                 ({{ diffSign(diffData.other.percent) }}{{ Math.abs(diffData.other.percent).toFixed(1) }}%)
+              </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('other')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('other', otherTotal))">
+                {{ diffSign(wfBmADiff('other', otherTotal)) }}¥{{ formatMoney(Math.abs(wfBmADiff('other', otherTotal))) }}
+                ({{ diffSign(wfBmAPercent('other', otherTotal)) }}{{ Math.abs(wfBmAPercent('other', otherTotal)).toFixed(1) }}%)
               </span>
             </div>
             <div class="wf-row wf-subtotal">
@@ -93,6 +110,11 @@
                 {{ diffSign(diffData.subTotal.diff) }}¥{{ formatMoney(Math.abs(diffData.subTotal.diff)) }}
                 ({{ diffSign(diffData.subTotal.percent) }}{{ Math.abs(diffData.subTotal.percent).toFixed(1) }}%)
               </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('subTotal')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('subTotal', costBaseline))">
+                {{ diffSign(wfBmADiff('subTotal', costBaseline)) }}¥{{ formatMoney(Math.abs(wfBmADiff('subTotal', costBaseline))) }}
+                ({{ diffSign(wfBmAPercent('subTotal', costBaseline)) }}{{ Math.abs(wfBmAPercent('subTotal', costBaseline)).toFixed(1) }}%)
+              </span>
             </div>
             <div class="wf-row" v-if="Math.abs(diffData.managementReserve.diff) > 0.01">
               <span class="wf-label">管理储备</span>
@@ -103,6 +125,11 @@
                 {{ diffSign(diffData.managementReserve.diff) }}¥{{ formatMoney(Math.abs(diffData.managementReserve.diff)) }}
                 ({{ diffSign(diffData.managementReserve.percent) }}{{ Math.abs(diffData.managementReserve.percent).toFixed(1) }}%)
               </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('managementReserve')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('managementReserve', form.managementReserve || 0))">
+                {{ diffSign(wfBmADiff('managementReserve', form.managementReserve || 0)) }}¥{{ formatMoney(Math.abs(wfBmADiff('managementReserve', form.managementReserve || 0))) }}
+                ({{ diffSign(wfBmAPercent('managementReserve', form.managementReserve || 0)) }}{{ Math.abs(wfBmAPercent('managementReserve', form.managementReserve || 0)).toFixed(1) }}%)
+              </span>
             </div>
             <div class="wf-row wf-total">
               <span class="wf-label">总预算差异</span>
@@ -112,6 +139,11 @@
               <span class="wf-diff-col" :style="diffStyle(diffData.total.diff)">
                 {{ diffSign(diffData.total.diff) }}¥{{ formatMoney(Math.abs(diffData.total.diff)) }}
                 ({{ diffSign(diffData.total.percent) }}{{ Math.abs(diffData.total.percent).toFixed(1) }}%)
+              </span>
+              <span class="wf-actual-col">¥{{ formatMoney(wfActual('total')) }}</span>
+              <span class="wf-ba-col" :style="diffStyle(wfBmADiff('total', totalBudget))">
+                {{ diffSign(wfBmADiff('total', totalBudget)) }}¥{{ formatMoney(Math.abs(wfBmADiff('total', totalBudget))) }}
+                ({{ diffSign(wfBmAPercent('total', totalBudget)) }}{{ Math.abs(wfBmAPercent('total', totalBudget)).toFixed(1) }}%)
               </span>
             </div>
           </div>
@@ -124,7 +156,7 @@
           <div class="section-header">
             <span class="section-title">人工</span>
             <span class="diff-badge" :style="diffStyle(diffData.labor.diff)">
-              {{ diffSign(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
+              调整后预算-调整前预算：{{ diffLabel(diffData.labor.diff) }}¥{{ formatMoney(Math.abs(diffData.labor.diff)) }}
               <span class="diff-percent">({{ diffSign(diffData.labor.percent) }}{{ Math.abs(diffData.labor.percent).toFixed(1) }}%)</span>
             </span>
           </div>
@@ -142,6 +174,9 @@
                 </el-table-column>
                 <el-table-column label="工时(小时)" width="100">
                   <template #default="{ row }">{{ row.hours }}</template>
+                </el-table-column>
+                <el-table-column label="成本定额(元/时)" width="120">
+                  <template #default="{ row }">{{ formatMoney(row.costRate) }}</template>
                 </el-table-column>
                 <el-table-column label="金额" width="120">
                   <template #default="{ row }">¥ {{ formatMoney(row.budgetAmount) }}</template>
@@ -198,7 +233,7 @@
           <div class="section-header">
             <span class="section-title">采购</span>
             <span class="diff-badge" :style="diffStyle(diffData.procurement.diff)">
-              {{ diffSign(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
+              调整后预算-调整前预算：{{ diffLabel(diffData.procurement.diff) }}¥{{ formatMoney(Math.abs(diffData.procurement.diff)) }}
               <span class="diff-percent">({{ diffSign(diffData.procurement.percent) }}{{ Math.abs(diffData.procurement.percent).toFixed(1) }}%)</span>
             </span>
           </div>
@@ -271,7 +306,7 @@
           <div class="section-header">
             <span class="section-title">其他科目</span>
             <span class="diff-badge" :style="diffStyle(diffData.other.diff)">
-              {{ diffSign(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
+              调整后预算-调整前预算：{{ diffLabel(diffData.other.diff) }}¥{{ formatMoney(Math.abs(diffData.other.diff)) }}
               <span class="diff-percent">({{ diffSign(diffData.other.percent) }}{{ Math.abs(diffData.other.percent).toFixed(1) }}%)</span>
             </span>
           </div>
@@ -313,7 +348,7 @@
               <div class="other-categories-row" v-if="visibleOtherCategories.length > 0">
                 <template v-for="(cat, idx) in otherCategoryList.slice(0, 3)" :key="cat.value">
                   <div v-if="adjustedItems[cat.value].length > 0" class="other-cat-item other-cat-adjust-item">
-                    <label class="other-cat-label">{{ cat.label }}（实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}）</label>
+                    <label class="other-cat-label">{{ cat.label }}（<span class="actual-cost-inline">实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}</span>）</label>
                     <el-input-number
                       v-model="adjustedItems[cat.value][0].amount"
                       :min="parseFloat(actualCostByCategory(cat.value))"
@@ -326,7 +361,7 @@
               <div class="other-categories-row" style="margin-top: 8px;">
                 <template v-for="(cat, idx) in otherCategoryList.slice(3)" :key="cat.value">
                   <div v-if="adjustedItems[cat.value].length > 0" class="other-cat-item other-cat-adjust-item">
-                    <label class="other-cat-label">{{ cat.label }}（实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}）</label>
+                    <label class="other-cat-label">{{ cat.label }}（<span class="actual-cost-inline">实际已发生：¥{{ formatMoney(actualCostByCategory(cat.value)) }}</span>）</label>
                     <el-input-number
                       v-model="adjustedItems[cat.value][0].amount"
                       :min="parseFloat(actualCostByCategory(cat.value))"
@@ -357,7 +392,7 @@
               <div class="budget-summary-row">
                 <div class="summary-item">
                   <label>总预算</label>
-                  <div class="summary-value highlight">¥ {{ formatMoney(leftTotalBudget) }}</div>
+                  <div class="summary-value">¥ {{ formatMoney(leftTotalBudget) }}</div>
                 </div>
                 <div class="summary-operator">=</div>
                 <div class="summary-item">
@@ -373,17 +408,17 @@
               <div class="budget-summary-row summary-actual-row">
                 <div class="summary-item">
                   <label>实际成本总额</label>
-                  <div class="summary-value highlight" style="color: #67C23A;">¥ {{ formatMoney(totalActualCost) }}</div>
+                  <div class="summary-value highlight" style="color: #e6a23c;">¥ {{ formatMoney(totalActualCost) }}</div>
                 </div>
                 <div class="summary-operator">=</div>
                 <div class="summary-item">
                   <label>项目直接实际成本</label>
-                  <div class="summary-value" style="color: #67C23A;">¥ {{ formatMoney(totalActualCost) }}</div>
+                  <div class="summary-value" style="color: #e6a23c;">¥ {{ formatMoney(totalActualCost) }}</div>
                 </div>
                 <div class="summary-operator">+</div>
                 <div class="summary-item">
                   <label>管理实际成本</label>
-                  <div class="summary-value" style="color: #67C23A;">¥ 0.00</div>
+                  <div class="summary-value" style="color: #e6a23c;">¥ 0.00</div>
                 </div>
               </div>
             </div>
@@ -391,7 +426,7 @@
               <div class="budget-summary-row">
                 <div class="summary-item">
                   <label>总预算</label>
-                  <div class="summary-value highlight">¥ {{ formatMoney(totalBudget) }}</div>
+                  <div class="summary-value">¥ {{ formatMoney(totalBudget) }}</div>
                 </div>
                 <div class="summary-operator">=</div>
                 <div class="summary-item">
@@ -667,9 +702,31 @@ const diffData = computed(() => {
   }
 })
 
-const diffColor = (val) => val > 0 ? '#F56C6C' : val < 0 ? '#67C23A' : '#909399'
-const diffSign = (val) => val > 0 ? '+' : ''
+const diffColor = (val) => val > 0 ? '#F56C6C' : val < 0 ? '#67C23A' : '#303133'
+const diffSign = (val) => val > 0 ? '+' : val < 0 ? '-' : ''
+const diffLabel = (val) => val > 0 ? '增加' : val < 0 ? '降低' : ''
 const diffStyle = (val) => ({ color: diffColor(val) })
+
+// Waterfall actual cost by row type
+const wfActual = (type) => {
+  if (type === 'labor') return actualCostByCategory('LABOR')
+  if (type === 'procurement') return actualCostByCategory('PROCUREMENT')
+  if (type === 'other') return totalOtherActualCost()
+  if (type === 'subTotal') return totalActualCost.value
+  if (type === 'managementReserve') return 0
+  if (type === 'total') return totalActualCost.value
+  return 0
+}
+
+// Budget - Actual diff
+const wfBmADiff = (type, adjustedVal) => adjustedVal - wfActual(type)
+
+// Budget - Actual percent
+const wfBmAPercent = (type, adjustedVal) => {
+  const actual = wfActual(type)
+  if (actual === 0) return 0
+  return (wfBmADiff(type, adjustedVal) / actual) * 100
+}
 
 // --- 未保存修改检测 ---
 const isDirty = ref(false)
@@ -1040,18 +1097,49 @@ const loadOriginalData = async () => {
   color: #909399;
 }
 
+.wf-diff-col {
+  width: 180px;
+  text-align: right;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 .wf-diff-label {
-  width: 200px;
+  width: 180px;
   text-align: right;
   font-size: 12px;
   color: #909399;
 }
 
-.wf-diff-col {
-  width: 200px;
+.wf-actual-label {
+  width: 120px;
+  text-align: right;
+  font-size: 12px;
+  color: #909399;
+}
+
+.wf-actual-col {
+  width: 120px;
+  text-align: right;
+  color: #e6a23c;
+  font-weight: bold;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wf-ba-label {
+  width: 180px;
+  text-align: right;
+  font-size: 12px;
+  color: #909399;
+}
+
+.wf-ba-col {
+  width: 180px;
   text-align: right;
   font-weight: bold;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .wf-subtotal {
@@ -1278,24 +1366,24 @@ const loadOriginalData = async () => {
 }
 
 .actual-cost-col {
-  color: #67C23A;
+  color: #e6a23c;
   font-weight: bold;
 }
 
 .actual-cost-inline {
-  color: #67C23A;
+  color: #e6a23c;
   font-size: 12px;
   font-weight: normal;
 }
 
 .actual-cost-title {
-  color: #67C23A;
+  color: #e6a23c;
   font-size: 13px;
   font-weight: bold;
 }
 
 .actual-cost-sub {
-  color: #67C23A;
+  color: #e6a23c;
   font-size: 12px;
   margin-top: 2px;
 }

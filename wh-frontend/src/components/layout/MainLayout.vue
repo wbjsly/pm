@@ -16,10 +16,12 @@
             v-for="tab in tabStore.tabs"
             :key="tab.path"
             :name="tab.path"
-            :label="tab.title"
             :closable="tab.closable !== false"
-            @contextmenu.prevent="(e) => { if (tab.closable !== false) showContextMenu(e, tab) }"
-          />
+          >
+            <template #label>
+              <span @contextmenu.prevent="(e) => showContextMenu(e, tab)">{{ tab.title }}</span>
+            </template>
+          </el-tab-pane>
         </el-tabs>
         <!-- User Account Dropdown -->
         <el-dropdown @command="handleUserCommand" class="user-dropdown">
@@ -48,8 +50,9 @@
 
   <!-- Context Menu -->
   <div v-show="contextVisible" class="context-menu" :style="{ top: contextTop + 'px', left: contextLeft + 'px' }" @contextmenu.prevent>
-    <div class="context-item" @click="closeCurrent">关闭</div>
-    <div class="context-item" @click="closeRight">关闭右侧</div>
+    <div v-if="contextTab?.closable !== false" class="context-item" @click="closeCurrent">关闭</div>
+    <div class="context-item" @click="closeLeft">关闭左边</div>
+    <div class="context-item" @click="closeRight">关闭右边</div>
     <div class="context-item" @click="closeOther">关闭其他</div>
     <div class="context-item" @click="closeAll">全部关闭</div>
   </div>
@@ -76,7 +79,6 @@ const contextLeft = ref(0)
 const contextTab = ref(null)
 
 function showContextMenu(e, tab) {
-  if (tab && tab.closable === false) return
   if (tab) {
     contextTab.value = tab
   } else {
@@ -99,6 +101,13 @@ function closeCurrent() {
     } else {
       router.push('/dashboard')
     }
+  }
+  hideContextMenu()
+}
+
+function closeLeft() {
+  if (contextTab.value) {
+    tabStore.closeLeft(contextTab.value.path)
   }
   hideContextMenu()
 }
@@ -147,7 +156,7 @@ function handleUserCommand(command) {
     router.push('/system/user/profile')
   } else if (command === 'logout') {
     userStore.logout()
-    tabStore.$patch({ tabs: [], activeTab: '' })
+    tabStore.$patch({ tabs: [{ name: 'Dashboard', path: '/dashboard', title: '主页', closable: false }], activeTab: '/dashboard' })
     router.push('/login?redirect=/dashboard')
   }
 }
