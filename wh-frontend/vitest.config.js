@@ -13,5 +13,11 @@ export default defineConfig({
     environment: 'happy-dom',
     include: ['src/__tests__/**/*.test.js'],
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{js,vue}'],
+      exclude: ['src/__tests__/**', 'src/main.js'],
+    },
   },
 })

@@ -11,7 +11,7 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
         <!-- Project Name (searchable dropdown) -->
         <el-form-item label="项目名称" prop="projectId">
-          <el-select v-model="form.projectId" filterable placeholder="请输入搜索项目名称" style="width: 100%" :disabled="isEdit">
+          <el-select v-model="form.projectId" filterable placeholder="请输入搜索项目名称" style="width: 100%" :disabled="isEdit || isProjectLocked">
             <el-option v-for="p in projects" :key="p.id" :label="p.projectName" :value="p.id" />
           </el-select>
         </el-form-item>
@@ -229,6 +229,7 @@ const projects = ref([])
 const positionList = ref([])
 
 const isEdit = computed(() => !!route.params.id)
+const isProjectLocked = computed(() => !!route.query.projectId && !isEdit.value)
 
 // Per-row quota confirmation dialog
 const quotaDialogVisible = ref(false)
@@ -468,7 +469,6 @@ const loadProjects = async () => {
     // In edit mode, ensure current project is included even if it has a budget
     if (isEdit.value && route.params.id) {
       try {
-        // getBudgetDetailApi returns WhPmBudget directly (not wrapped in .budget)
         const budgetRes2 = await getBudgetDetailApi(route.params.id)
         const budget = budgetRes2.data
         if (budget && budget.projectId) {
@@ -479,6 +479,15 @@ const loadProjects = async () => {
           }
         }
       } catch { /* ignore */ }
+    }
+    // When project is locked (create from list row "+"), ensure it's in options
+    if (isProjectLocked.value) {
+      const lockProjectId = route.query.projectId
+      const exists = filtered.find(p => p.id === lockProjectId)
+      if (!exists) {
+        const charter = charters.find(c => c.id === lockProjectId)
+        if (charter) filtered.unshift(charter)
+      }
     }
     projects.value = filtered
   } catch (e) {
@@ -536,6 +545,9 @@ const loadData = async () => {
 
 onMounted(async () => {
   await Promise.all([loadProjects(), loadPositions()])
+  if (isProjectLocked.value) {
+    form.value.projectId = route.query.projectId
+  }
   loadData()
 })
 
@@ -543,6 +555,9 @@ onActivated(async () => {
   await Promise.all([loadProjects(), loadPositions()])
   if (!isEdit.value) {
     resetForm()
+    if (isProjectLocked.value) {
+      form.value.projectId = route.query.projectId
+    }
   } else {
     loadData()
   }
@@ -552,6 +567,9 @@ watch(() => route.params.id, (newId) => {
   if (!route.path.startsWith('/pm/budget/form')) return
   if (!newId) {
     resetForm()
+    if (isProjectLocked.value) {
+      form.value.projectId = route.query.projectId
+    }
   } else {
     loadData()
   }

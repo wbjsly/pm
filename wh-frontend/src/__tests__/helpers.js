@@ -67,4 +67,12 @@ export const elementStubs = {
   'el-result': true,
   'el-skeleton': true,
   'el-scrollbar': true,
+  Plus: true,
+  Edit: true,
+  Delete: true,
+  View: true,
+  Promotion: true,
+  Document: true,
+  Select: true,
+  CloseBold: true,
 }
