@@ -5,12 +5,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wh.common.R;
 import com.wh.common.ServiceException;
+import com.wh.bo.system.SysUserBo;
 import com.wh.dao.pm.WhPmCharterDao;
 import com.wh.dao.pm.WhPmWbsElementDao;
-import com.wh.dao.system.SysUserDao;
 import com.wh.entity.pm.WhPmCharter;
 import com.wh.entity.pm.WhPmWbsElement;
-import com.wh.entity.system.SysUser;
 import com.wh.service.SequenceService;
 import com.wh.util.SecurityUtils;
 import com.wh.vo.pm.CharterStatsVO;
@@ -22,9 +21,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,16 +35,16 @@ import java.util.stream.Collectors;
 public class WhPmCharterBo {
 
     private final WhPmCharterDao charterDao;
-    private final SysUserDao sysUserDao;
+    private final SysUserBo sysUserBo;
     private final WhPmWbsElementDao wbsElementDao;
     private final SequenceService sequenceService;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
 
-    public WhPmCharterBo(WhPmCharterDao charterDao, SysUserDao sysUserDao, SequenceService sequenceService,
-                         RuntimeService runtimeService, TaskService taskService, WhPmWbsElementDao wbsElementDao) {
+    public WhPmCharterBo(WhPmCharterDao charterDao, SysUserBo sysUserBo, SequenceService sequenceService,
+                          RuntimeService runtimeService, TaskService taskService, WhPmWbsElementDao wbsElementDao) {
         this.charterDao = charterDao;
-        this.sysUserDao = sysUserDao;
+        this.sysUserBo = sysUserBo;
         this.wbsElementDao = wbsElementDao;
         this.sequenceService = sequenceService;
         this.runtimeService = runtimeService;
@@ -59,9 +62,10 @@ public class WhPmCharterBo {
             wrapper.eq(WhPmCharter::getPmId, pmId);
         }
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(WhPmCharter::getProjectName, keyword)
-                   .or()
-                   .like(WhPmCharter::getCharterCode, keyword);
+            // 必须用 and(...) 嵌套，否则 OR 会绕过 del_flag 等前置条件
+            wrapper.and(w -> w.like(WhPmCharter::getProjectName, keyword)
+                    .or()
+                    .like(WhPmCharter::getCharterCode, keyword));
         }
         if (progress != null && !progress.isEmpty()) {
             List<String> progressList = java.util.Arrays.asList(progress.split(","));
@@ -75,33 +79,33 @@ public class WhPmCharterBo {
     }
 
     private void fillUserNames(List<WhPmCharter> charters) {
-        Map<String, String> userNameMap = new HashMap<>();
+        Set<String> userIds = new HashSet<>();
         for (WhPmCharter c : charters) {
-            collectUserId(c.getSponsorId(), userNameMap);
-            collectUserId(c.getPmId(), userNameMap);
+            if (c.getSponsorId() != null) userIds.add(c.getSponsorId());
+            if (c.getPmId() != null) userIds.add(c.getPmId());
         }
+        Map<String, String> userNameMap = sysUserBo.getRealNameMap(userIds);
         for (WhPmCharter c : charters) {
             c.setSponsorName(userNameMap.get(c.getSponsorId()));
             c.setPmName(userNameMap.get(c.getPmId()));
         }
     }
 
-    private void collectUserId(String userId, Map<String, String> map) {
-        if (userId != null && !userId.isEmpty() && !map.containsKey(userId)) {
-            SysUser user = sysUserDao.selectById(userId);
-            if (user != null) {
-                map.put(userId, user.getRealName());
-            }
-        }
-    }
-
     private void fillWbsStats(List<WhPmCharter> charters) {
+        Set<String> projectIds = charters.stream().map(WhPmCharter::getId).collect(Collectors.toSet());
+        if (projectIds.isEmpty()) {
+            return;
+        }
+        // 一次性批量加载所有项目的 level=1 WBS 元素，避免逐项目查询
+        LambdaQueryWrapper<WhPmWbsElement> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(WhPmWbsElement::getProjectId, projectIds)
+               .eq(WhPmWbsElement::getDelFlag, "0")
+               .eq(WhPmWbsElement::getLevel, 1);
+        Map<String, List<WhPmWbsElement>> elementsByProject = wbsElementDao.selectList(wrapper).stream()
+                .collect(Collectors.groupingBy(WhPmWbsElement::getProjectId));
+
         for (WhPmCharter c : charters) {
-            LambdaQueryWrapper<WhPmWbsElement> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(WhPmWbsElement::getProjectId, c.getId())
-                   .eq(WhPmWbsElement::getDelFlag, "0")
-                   .eq(WhPmWbsElement::getLevel, 1);
-            List<WhPmWbsElement> elements = wbsElementDao.selectList(wrapper);
+            List<WhPmWbsElement> elements = elementsByProject.getOrDefault(c.getId(), List.of());
 
             double totalEffort = 0;
             String latestDate = null;
@@ -157,6 +161,22 @@ public class WhPmCharterBo {
             return null;
         }
         return charter;
+    }
+
+    /**
+     * 批量获取未删除的章程，返回 ID → 章程映射（供其他 BO 避免 N+1 查询）。
+     */
+    public Map<String, WhPmCharter> getByIds(Collection<String> ids) {
+        Set<String> filtered = ids == null ? Set.of() : ids.stream()
+                .filter(Objects::nonNull)
+                .filter(id -> !id.isEmpty())
+                .collect(Collectors.toSet());
+        if (filtered.isEmpty()) {
+            return new HashMap<>();
+        }
+        return charterDao.selectBatchIds(filtered).stream()
+                .filter(c -> !"1".equals(c.getDelFlag()))
+                .collect(Collectors.toMap(WhPmCharter::getId, c -> c, (a, b) -> a, HashMap::new));
     }
 
     @Transactional

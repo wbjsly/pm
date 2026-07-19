@@ -17,9 +17,11 @@ import java.util.List;
 public class WhPmWbsElementController {
 
     private final WhPmWbsElementBo wbsBo;
+    private final WhPmWbsTransferBo wbsTransferBo;
 
-    public WhPmWbsElementController(WhPmWbsElementBo wbsBo) {
+    public WhPmWbsElementController(WhPmWbsElementBo wbsBo, WhPmWbsTransferBo wbsTransferBo) {
         this.wbsBo = wbsBo;
+        this.wbsTransferBo = wbsTransferBo;
     }
 
     @GetMapping
@@ -103,17 +105,17 @@ public class WhPmWbsElementController {
     @PostMapping("/import")
     public R<WbsImportResult> importWbs(@RequestParam("file") MultipartFile file,
                                         @RequestParam String projectId) throws IOException {
-        return R.ok(wbsBo.importWbs(file, projectId));
+        return R.ok(wbsTransferBo.importWbs(file, projectId));
     }
 
     @GetMapping("/export")
     public void exportWbs(@RequestParam String projectId,
                           javax.servlet.http.HttpServletResponse response) throws IOException {
-        wbsBo.exportWbs(projectId, response);
+        wbsTransferBo.exportWbs(projectId, response);
     }
 
     @GetMapping("/template")
     public void downloadTemplate(javax.servlet.http.HttpServletResponse response) throws IOException {
-        wbsBo.downloadTemplate(response);
+        wbsTransferBo.downloadTemplate(response);
     }
 }

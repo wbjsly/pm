@@ -4,12 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wh.common.ServiceException;
+import com.wh.bo.system.SysUserBo;
 import com.wh.dao.pm.WhPmCharterDao;
 import com.wh.dao.pm.WhPmDeliverableDao;
-import com.wh.dao.system.SysUserDao;
 import com.wh.entity.pm.WhPmCharter;
 import com.wh.entity.pm.WhPmDeliverable;
-import com.wh.entity.system.SysUser;
 import com.wh.service.SequenceService;
 import com.wh.util.SecurityUtils;
 import io.minio.GetObjectArgs;
@@ -41,7 +40,7 @@ public class WhPmDeliverableBo {
 
     private final WhPmDeliverableDao deliverableDao;
     private final WhPmCharterDao charterDao;
-    private final SysUserDao sysUserDao;
+    private final SysUserBo sysUserBo;
     private final SequenceService sequenceService;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
@@ -49,13 +48,13 @@ public class WhPmDeliverableBo {
     private final String bucket;
 
     public WhPmDeliverableBo(WhPmDeliverableDao deliverableDao, WhPmCharterDao charterDao,
-                             SysUserDao sysUserDao, SequenceService sequenceService,
-                             RuntimeService runtimeService, TaskService taskService,
-                             MinioClient minioClient,
-                             @Value("${app.minio.bucket}") String bucket) {
+                              SysUserBo sysUserBo, SequenceService sequenceService,
+                              RuntimeService runtimeService, TaskService taskService,
+                              MinioClient minioClient,
+                              @Value("${app.minio.bucket}") String bucket) {
         this.deliverableDao = deliverableDao;
         this.charterDao = charterDao;
-        this.sysUserDao = sysUserDao;
+        this.sysUserBo = sysUserBo;
         this.sequenceService = sequenceService;
         this.runtimeService = runtimeService;
         this.taskService = taskService;
@@ -101,16 +100,10 @@ public class WhPmDeliverableBo {
     }
 
     private void fillCreateByName(List<WhPmDeliverable> deliverables) {
-        Map<String, String> userNameMap = new HashMap<>();
-        for (WhPmDeliverable d : deliverables) {
-            if (d.getCreateBy() != null && !d.getCreateBy().isEmpty()
-                    && !userNameMap.containsKey(d.getCreateBy())) {
-                SysUser user = sysUserDao.selectById(d.getCreateBy());
-                if (user != null) {
-                    userNameMap.put(d.getCreateBy(), user.getRealName());
-                }
-            }
-        }
+        List<String> creatorIds = deliverables.stream()
+                .map(WhPmDeliverable::getCreateBy)
+                .collect(java.util.stream.Collectors.toList());
+        Map<String, String> userNameMap = sysUserBo.getRealNameMap(creatorIds);
         for (WhPmDeliverable d : deliverables) {
             d.setCreateByName(userNameMap.get(d.getCreateBy()));
         }
@@ -120,9 +113,10 @@ public class WhPmDeliverableBo {
         if (deliverable.getProjectId() == null) return;
         WhPmCharter charter = charterDao.selectById(deliverable.getProjectId());
         if (charter != null && charter.getSponsorId() != null) {
-            SysUser sponsor = sysUserDao.selectById(charter.getSponsorId());
-            if (sponsor != null) {
-                deliverable.setSponsorName(sponsor.getRealName());
+            String sponsorName = sysUserBo.getRealNameMap(List.of(charter.getSponsorId()))
+                    .get(charter.getSponsorId());
+            if (sponsorName != null) {
+                deliverable.setSponsorName(sponsorName);
             }
         }
     }

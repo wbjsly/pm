@@ -28,9 +28,10 @@ public class ErpModuleBo {
             wrapper.eq(ErpModule::getProductId, productId);
         }
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(ErpModule::getModuleCode, keyword)
-                   .or()
-                   .like(ErpModule::getModuleName, keyword);
+            // 必须用 and(...) 嵌套，否则 OR 会绕过 del_flag 等前置条件
+            wrapper.and(w -> w.like(ErpModule::getModuleCode, keyword)
+                    .or()
+                    .like(ErpModule::getModuleName, keyword));
         }
         wrapper.orderByDesc(ErpModule::getCreateDate);
         return moduleDao.selectPage(page, wrapper);

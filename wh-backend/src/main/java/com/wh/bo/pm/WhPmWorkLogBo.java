@@ -2,15 +2,14 @@ package com.wh.bo.pm;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wh.common.ServiceException;
+import com.wh.bo.system.SysUserBo;
 import com.wh.dao.pm.WhPmWorkLogDao;
 import com.wh.dao.pm.WhPmWbsElementDao;
 import com.wh.dao.pm.WhSysWorkCalendarDao;
-import com.wh.dao.system.SysUserDao;
 import com.wh.entity.pm.WhPmCharter;
 import com.wh.entity.pm.WhPmWorkLog;
 import com.wh.entity.pm.WhPmWbsElement;
 import com.wh.entity.pm.WhSysWorkCalendar;
-import com.wh.entity.system.SysUser;
 import com.wh.vo.pm.WorkHoursStatsVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,17 +30,17 @@ public class WhPmWorkLogBo {
     private final WhPmWbsElementDao wbsElementDao;
     private final WhSysWorkCalendarDao calendarDao;
     private final WhSysWorkCalendarBo calendarBo;
-    private final SysUserDao sysUserDao;
+    private final SysUserBo sysUserBo;
 
     public WhPmWorkLogBo(WhPmWorkLogDao workLogDao, WhPmCharterBo charterBo,
-                          WhPmWbsElementDao wbsElementDao, WhSysWorkCalendarDao calendarDao,
-                          WhSysWorkCalendarBo calendarBo, SysUserDao sysUserDao) {
+                           WhPmWbsElementDao wbsElementDao, WhSysWorkCalendarDao calendarDao,
+                           WhSysWorkCalendarBo calendarBo, SysUserBo sysUserBo) {
         this.workLogDao = workLogDao;
         this.charterBo = charterBo;
         this.wbsElementDao = wbsElementDao;
         this.calendarDao = calendarDao;
         this.calendarBo = calendarBo;
-        this.sysUserDao = sysUserDao;
+        this.sysUserBo = sysUserBo;
     }
 
     /**
@@ -89,32 +88,33 @@ public class WhPmWorkLogBo {
     }
 
     private void enrichLogs(List<WhPmWorkLog> logs) {
-        Map<String, WhPmCharter> projectCache = new HashMap<>();
-        Map<String, String> userCache = new HashMap<>();
+        // 批量加载项目与用户信息，避免逐条 N+1 查询
+        Set<String> projectIds = new HashSet<>();
+        Set<String> userIds = new HashSet<>();
         for (WhPmWorkLog log : logs) {
-            WhPmCharter project = projectCache.computeIfAbsent(log.getProjectId(),
-                    id -> charterBo.getByIdSilent(id));
+            projectIds.add(log.getProjectId());
+            if (log.getCreateBy() != null) userIds.add(log.getCreateBy());
+            if (log.getUpdateBy() != null && !"DRAFT".equals(log.getStatus())) {
+                userIds.add(log.getUpdateBy());
+            }
+        }
+        Map<String, WhPmCharter> projectMap = charterBo.getByIds(projectIds);
+        Map<String, String> userNameMap = sysUserBo.getRealNameMap(userIds);
+
+        for (WhPmWorkLog log : logs) {
+            WhPmCharter project = projectMap.get(log.getProjectId());
             if (project != null) {
                 log.setProjectName(project.getProjectName());
                 log.setProjectShortName(project.getProjectShortName());
             }
-            String createBy = log.getCreateBy();
-            if (createBy != null && !userCache.containsKey(createBy)) {
-                SysUser u = sysUserDao.selectById(createBy);
-                userCache.put(createBy, u != null ? u.getRealName() : null);
-            }
-            String realName = userCache.get(createBy);
+            String realName = userNameMap.get(log.getCreateBy());
             if (realName != null) {
                 log.setCreateByName(realName);
             }
             // Resolve approver name from updateBy
             String updateBy = log.getUpdateBy();
             if (updateBy != null && !"DRAFT".equals(log.getStatus())) {
-                if (!userCache.containsKey(updateBy)) {
-                    SysUser u = sysUserDao.selectById(updateBy);
-                    userCache.put(updateBy, u != null ? u.getRealName() : null);
-                }
-                String approverName = userCache.get(updateBy);
+                String approverName = userNameMap.get(updateBy);
                 if (approverName != null) {
                     log.setApproverName(approverName);
                 }

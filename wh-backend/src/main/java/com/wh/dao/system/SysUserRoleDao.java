@@ -16,6 +16,14 @@ public interface SysUserRoleDao extends BaseMapper<SysUserRole> {
             "WHERE sur.USER_ID = #{userId}")
     List<Map<String, Object>> getUserRoles(String userId);
 
+    @Select("<script>" +
+            "SELECT sur.USER_ID AS USER_ID, sr.ROLE_CODE AS ROLE_CODE FROM sys_user_role sur " +
+            "INNER JOIN sys_role sr ON sur.ROLE_ID = sr.ID " +
+            "WHERE sur.USER_ID IN " +
+            "<foreach collection='userIds' item='uid' open='(' separator=',' close=')'>#{uid}</foreach>" +
+            "</script>")
+    List<Map<String, Object>> getRoleCodesByUserIds(@org.apache.ibatis.annotations.Param("userIds") java.util.Collection<String> userIds);
+
     @org.apache.ibatis.annotations.Delete("DELETE FROM sys_user_role WHERE USER_ID = #{userId}")
     int deleteByUserId(String userId);
 

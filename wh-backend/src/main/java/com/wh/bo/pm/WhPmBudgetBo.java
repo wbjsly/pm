@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wh.common.ServiceException;
+import com.wh.bo.system.SysUserBo;
 import com.wh.dao.pm.*;
 import com.wh.entity.pm.WhPmActualCost;
 import com.wh.entity.pm.WhPmBudget;
@@ -36,36 +37,27 @@ public class WhPmBudgetBo {
 
     private final WhPmBudgetDao budgetDao;
     private final WhPmBudgetItemDao budgetItemDao;
-    private final WhPmBudgetItemLaborDao budgetItemLaborDao;
-    private final WhPmBudgetItemProcurementDao budgetItemProcurementDao;
-    private final WhPmBudgetItemOtherDao budgetItemOtherDao;
+    private final WhPmBudgetItemBo budgetItemBo;
     private final WhPmActualCostDao actualCostDao;
     private final com.wh.dao.pm.WhPmCharterDao charterDao;
-    private final com.wh.dao.system.SysUserDao sysUserDao;
-    private final com.wh.dao.system.SysPositionDao sysPositionDao;
+    private final SysUserBo sysUserBo;
     private final SequenceService sequenceService;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
 
     public WhPmBudgetBo(WhPmBudgetDao budgetDao, WhPmBudgetItemDao budgetItemDao,
-                        WhPmBudgetItemLaborDao budgetItemLaborDao,
-                        WhPmBudgetItemProcurementDao budgetItemProcurementDao,
-                        WhPmBudgetItemOtherDao budgetItemOtherDao,
-                        WhPmActualCostDao actualCostDao,
-                        com.wh.dao.pm.WhPmCharterDao charterDao,
-                        com.wh.dao.system.SysUserDao sysUserDao,
-                        com.wh.dao.system.SysPositionDao sysPositionDao,
-                        SequenceService sequenceService,
-                        RuntimeService runtimeService, TaskService taskService) {
+                         WhPmBudgetItemBo budgetItemBo,
+                         WhPmActualCostDao actualCostDao,
+                         com.wh.dao.pm.WhPmCharterDao charterDao,
+                         SysUserBo sysUserBo,
+                         SequenceService sequenceService,
+                         RuntimeService runtimeService, TaskService taskService) {
         this.budgetDao = budgetDao;
         this.budgetItemDao = budgetItemDao;
-        this.budgetItemLaborDao = budgetItemLaborDao;
-        this.budgetItemProcurementDao = budgetItemProcurementDao;
-        this.budgetItemOtherDao = budgetItemOtherDao;
+        this.budgetItemBo = budgetItemBo;
         this.actualCostDao = actualCostDao;
         this.charterDao = charterDao;
-        this.sysUserDao = sysUserDao;
-        this.sysPositionDao = sysPositionDao;
+        this.sysUserBo = sysUserBo;
         this.sequenceService = sequenceService;
         this.runtimeService = runtimeService;
         this.taskService = taskService;
@@ -86,11 +78,19 @@ public class WhPmBudgetBo {
         fillUserNames(result.getRecords());
         fillActualCosts(result.getRecords());
 
-        // Filter by PM if needed (after loading charters)
+        // Filter by PM if needed (batch-load charters to avoid N+1)
         if (pmId != null && !pmId.isEmpty()) {
+            Set<String> pageProjectIds = result.getRecords().stream()
+                    .map(WhPmBudget::getProjectId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Map<String, com.wh.entity.pm.WhPmCharter> charterMap = pageProjectIds.isEmpty()
+                    ? new HashMap<>()
+                    : charterDao.selectBatchIds(pageProjectIds).stream()
+                            .collect(Collectors.toMap(com.wh.entity.pm.WhPmCharter::getId, c -> c));
             result.getRecords().removeIf(b -> {
                 if (b.getProjectId() == null) return true;
-                var charter = charterDao.selectById(b.getProjectId());
+                var charter = charterMap.get(b.getProjectId());
                 return charter == null || !pmId.equals(charter.getPmId());
             });
         }
@@ -158,16 +158,15 @@ public class WhPmBudgetBo {
             }
         }
 
-        // Load PM names
-        Map<String, String> pmNameMap = new HashMap<>();
-        for (com.wh.entity.pm.WhPmCharter c : charters) {
-            if (c.getPmId() != null && !pmNameMap.containsKey(c.getPmId())) {
-                var user = sysUserDao.selectById(c.getPmId());
-                if (user != null) {
-                    pmNameMap.put(c.getPmId(), user.getRealName());
-                }
-            }
-        }
+        // Load PM names (batch)
+        Set<String> pmIds = charters.stream()
+                .map(com.wh.entity.pm.WhPmCharter::getPmId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<String, String> pmNameMap = sysUserBo.getRealNameMap(pmIds);
+
+        // Load actual costs for all projects at once (avoid per-project N+1)
+        Map<String, Double> actualCostMap = sumActualCostsByProject(allProjectIds);
 
         // Build VO list from charters (ensures projects without budgets appear)
         List<ProjectBudgetVO> voList = new ArrayList<>();
@@ -178,7 +177,7 @@ public class WhPmBudgetBo {
             // If filtering by status and this project has no matching budgets,
             // still include it (shows 0 budget rows)
             List<WhPmBudget> sortedBudgets = new ArrayList<>(budgets);
-            fillActualCosts(sortedBudgets);
+            fillActualCosts(sortedBudgets, actualCostMap);
 
             // Populate item summaries on each budget
             for (WhPmBudget b : sortedBudgets) {
@@ -197,8 +196,7 @@ public class WhPmBudgetBo {
             WhPmBudget latestApproved = latestApprovedMap.get(pid);
 
             // Project-level cost from actual costs
-            Double projActualCost = actualCostDao.sumAmountByProjectId(pid);
-            double pActual = projActualCost != null ? projActualCost : 0.0;
+            double pActual = actualCostMap.getOrDefault(pid, 0.0);
             double pBaseline = latestApproved != null ? parseDouble(latestApproved.getCostBaseline()) : 0.0;
 
             ProjectBudgetVO vo = new ProjectBudgetVO();
@@ -245,19 +243,7 @@ public class WhPmBudgetBo {
         WhPmBudget budget = getById(id);
         BudgetDetailVO vo = new BudgetDetailVO();
         vo.setBudget(budget);
-
-        // Load items
-        List<WhPmBudgetItem> items = budgetItemDao.selectAllByBudgetId(id);
-        Map<String, WhPmBudgetItemLabor> laborMap = loadLaborDetails(items);
-        Map<String, WhPmBudgetItemProcurement> procurementMap = loadProcurementDetails(items);
-        Map<String, WhPmBudgetItemOther> otherMap = loadOtherDetails(items);
-
-        List<BudgetItemVO> itemVOs = new ArrayList<>();
-        for (WhPmBudgetItem item : items) {
-            BudgetItemVO voItem = buildSingleItemVO(item, laborMap, procurementMap, otherMap);
-            itemVOs.add(voItem);
-        }
-        vo.setItems(itemVOs);
+        vo.setItems(budgetItemBo.buildFlatItemVOs(id));
         return vo;
     }
 
@@ -286,11 +272,11 @@ public class WhPmBudgetBo {
 
         // Create budget items
         if (req.getItems() != null && !req.getItems().isEmpty()) {
-            createBudgetItems(budget.getId(), req.getItems());
+            budgetItemBo.createItems(budget.getId(), req.getItems());
         }
 
         // Recalculate totals
-        recalculateTotals(budget);
+        budgetItemBo.recalculateTotals(budget);
 
         return budget;
     }
@@ -309,12 +295,12 @@ public class WhPmBudgetBo {
         budgetDao.updateById(budget);
 
         // Replace all items
-        deleteAllItems(budget.getId());
+        budgetItemBo.deleteAllItems(budget.getId());
         if (req.getItems() != null && !req.getItems().isEmpty()) {
-            createBudgetItems(budget.getId(), req.getItems());
+            budgetItemBo.createItems(budget.getId(), req.getItems());
         }
 
-        recalculateTotals(budget);
+        budgetItemBo.recalculateTotals(budget);
     }
 
     @Transactional
@@ -339,10 +325,10 @@ public class WhPmBudgetBo {
         budgetDao.insert(budget);
 
         if (req.getItems() != null && !req.getItems().isEmpty()) {
-            createBudgetItems(budget.getId(), req.getItems());
+            budgetItemBo.createItems(budget.getId(), req.getItems());
         }
 
-        recalculateTotals(budget);
+        budgetItemBo.recalculateTotals(budget);
 
         log.info("Budget {} created as upgrade draft from {} version {}", budget.getId(), original.getVersion(), budget.getVersion());
         return budget;
@@ -377,7 +363,7 @@ public class WhPmBudgetBo {
             throw new ServiceException("只有草稿状态的预算可以删除");
         }
         // Soft delete items
-        deleteAllItems(id);
+        budgetItemBo.deleteAllItems(id);
         budgetDao.physicalDeleteById(id);
     }
 
@@ -496,23 +482,7 @@ public class WhPmBudgetBo {
         }
 
         // Build budget item tree
-        List<WhPmBudgetItem> items = budgetItemDao.selectAllByBudgetId(budget.getId());
-        Map<String, List<WhPmBudgetItem>> childrenMap = items.stream()
-                .filter(i -> i.getParentId() != null)
-                .collect(Collectors.groupingBy(WhPmBudgetItem::getParentId));
-
-        List<WhPmBudgetItem> rootItems = items.stream()
-                .filter(i -> i.getParentId() == null)
-                .sorted(Comparator.comparing(WhPmBudgetItem::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
-                .collect(Collectors.toList());
-
-        // Load detail for each item
-        Map<String, WhPmBudgetItemLabor> laborMap = loadLaborDetails(items);
-        Map<String, WhPmBudgetItemProcurement> procurementMap = loadProcurementDetails(items);
-        Map<String, WhPmBudgetItemOther> otherMap = loadOtherDetails(items);
-
-        List<BudgetItemVO> itemVOs = buildItemVOs(rootItems, childrenMap, laborMap, procurementMap, otherMap);
-        vo.setItems(itemVOs);
+        vo.setItems(budgetItemBo.buildTreeItemVOs(budget.getId()));
 
         // Calculate totals
         BigDecimal directBudget = new BigDecimal(budget.getCostBaseline());
@@ -539,88 +509,6 @@ public class WhPmBudgetBo {
         return budgets.stream().map(BudgetVersionVO::from).collect(Collectors.toList());
     }
 
-    private void createBudgetItems(String budgetId, List<BudgetItemRequest> items) {
-        for (BudgetItemRequest req : items) {
-            createBudgetItemRecursive(budgetId, req, null, 0);
-        }
-    }
-
-    private void createBudgetItemRecursive(String budgetId, BudgetItemRequest req, String parentId, int sortOrder) {
-        WhPmBudgetItem item = new WhPmBudgetItem();
-        item.setBudgetId(budgetId);
-        item.setCategory(req.getCategory());
-        item.setParentId(parentId);
-        item.setAmount(req.getAmount() != null ? req.getAmount() : "0");
-        item.setLevel(req.getLevel() != null ? req.getLevel() : 1);
-        item.setSortOrder(sortOrder);
-        budgetItemDao.insert(item);
-
-        // Create sub-table record
-        if ("LABOR".equals(req.getCategory()) && req.getRoleCode() != null) {
-            WhPmBudgetItemLabor labor = new WhPmBudgetItemLabor();
-            labor.setBudgetItemId(item.getId());
-            labor.setRoleCode(req.getRoleCode());
-            labor.setPositionId(req.getPositionId());
-            labor.setHours(req.getHours() != null ? req.getHours() : "0");
-            labor.setCostRate(req.getCostRate() != null ? req.getCostRate() : "0");
-            labor.setAmount(req.getAmount() != null ? req.getAmount() : "0");
-            budgetItemLaborDao.insert(labor);
-        } else if ("PROCUREMENT".equals(req.getCategory()) && req.getBomItem() != null) {
-            WhPmBudgetItemProcurement procurement = new WhPmBudgetItemProcurement();
-            procurement.setBudgetItemId(item.getId());
-            procurement.setBomItem(req.getBomItem());
-            procurement.setQty(req.getQty() != null ? req.getQty() : "0");
-            procurement.setUnitPrice(req.getUnitPrice() != null ? req.getUnitPrice() : "0");
-            procurement.setAmount(req.getAmount() != null ? req.getAmount() : "0");
-            budgetItemProcurementDao.insert(procurement);
-        } else if (isOtherCategory(req.getCategory())) {
-            WhPmBudgetItemOther other = new WhPmBudgetItemOther();
-            other.setBudgetItemId(item.getId());
-            other.setCategory(req.getCategory());
-            other.setDescription(req.getDescription());
-            other.setAmount(req.getAmount() != null ? req.getAmount() : "0");
-            budgetItemOtherDao.insert(other);
-        }
-
-        // Create children
-        if (req.getChildren() != null && !req.getChildren().isEmpty()) {
-            int childOrder = 0;
-            for (BudgetItemRequest child : req.getChildren()) {
-                createBudgetItemRecursive(budgetId, child, item.getId(), childOrder++);
-            }
-        }
-    }
-
-    private void deleteAllItems(String budgetId) {
-        // Get all items
-        List<WhPmBudgetItem> items = budgetItemDao.selectAllByBudgetId(budgetId);
-        for (WhPmBudgetItem item : items) {
-            // Delete sub-table records
-            budgetItemLaborDao.delete(new LambdaQueryWrapper<WhPmBudgetItemLabor>()
-                    .eq(WhPmBudgetItemLabor::getBudgetItemId, item.getId()));
-            budgetItemProcurementDao.delete(new LambdaQueryWrapper<WhPmBudgetItemProcurement>()
-                    .eq(WhPmBudgetItemProcurement::getBudgetItemId, item.getId()));
-            budgetItemOtherDao.delete(new LambdaQueryWrapper<WhPmBudgetItemOther>()
-                    .eq(WhPmBudgetItemOther::getBudgetItemId, item.getId()));
-        }
-        // Soft delete items
-        for (WhPmBudgetItem item : items) {
-            budgetItemDao.deleteById(item.getId());
-        }
-    }
-
-    private void recalculateTotals(WhPmBudget budget) {
-        List<WhPmBudgetItem> primaryItems = budgetItemDao.selectPrimaryItems(budget.getId());
-        BigDecimal costBaseline = BigDecimal.ZERO;
-        for (WhPmBudgetItem item : primaryItems) {
-            costBaseline = costBaseline.add(new BigDecimal(item.getAmount()));
-        }
-        budget.setCostBaseline(costBaseline.toPlainString());
-        BigDecimal managementReserve = new BigDecimal(budget.getManagementReserve());
-        budget.setTotalBudget(costBaseline.add(managementReserve).toPlainString());
-        budgetDao.updateById(budget);
-    }
-
     private WhPmBudget getLatestApprovedBudget(String budgetId) {
         // budgetId is actually the projectId for comparison API
         LambdaQueryWrapper<WhPmBudget> wrapper = new LambdaQueryWrapper<>();
@@ -633,121 +521,6 @@ public class WhPmBudgetBo {
             throw new ServiceException("没有已审批通过的预算");
         }
         return budgets.get(0);
-    }
-
-    private List<BudgetItemVO> buildItemVOs(List<WhPmBudgetItem> items,
-                                            Map<String, List<WhPmBudgetItem>> childrenMap,
-                                            Map<String, WhPmBudgetItemLabor> laborMap,
-                                            Map<String, WhPmBudgetItemProcurement> procurementMap,
-                                            Map<String, WhPmBudgetItemOther> otherMap) {
-        List<BudgetItemVO> voList = new ArrayList<>();
-        for (WhPmBudgetItem item : items) {
-            BudgetItemVO vo = buildSingleItemVO(item, laborMap, procurementMap, otherMap);
-            List<WhPmBudgetItem> children = childrenMap.get(item.getId());
-            if (children != null && !children.isEmpty()) {
-                List<BudgetItemVO> childVOs = buildItemVOs(children, childrenMap, laborMap, procurementMap, otherMap);
-                vo.setChildren(childVOs);
-            }
-            voList.add(vo);
-        }
-        return voList;
-    }
-
-    private BudgetItemVO buildSingleItemVO(WhPmBudgetItem item,
-                                           Map<String, WhPmBudgetItemLabor> laborMap,
-                                           Map<String, WhPmBudgetItemProcurement> procurementMap,
-                                           Map<String, WhPmBudgetItemOther> otherMap) {
-        BudgetItemVO vo = new BudgetItemVO();
-        vo.setId(item.getId());
-        vo.setCategory(item.getCategory());
-        vo.setLevel(item.getLevel());
-        vo.setBudgetAmount(new BigDecimal(item.getAmount()));
-
-        // Get actual amount
-        double actual = actualCostDao.sumAmountByBudgetItemId(item.getId());
-        vo.setActualAmount(BigDecimal.valueOf(actual));
-
-        // Calculate ratio
-        if (vo.getBudgetAmount().compareTo(BigDecimal.ZERO) > 0) {
-            vo.setRatio(vo.getActualAmount().divide(vo.getBudgetAmount(), 4, RoundingMode.HALF_UP));
-        } else {
-            vo.setRatio(BigDecimal.ZERO);
-        }
-
-        // Fill detail
-        if ("LABOR".equals(item.getCategory())) {
-            WhPmBudgetItemLabor labor = laborMap.get(item.getId());
-            if (labor != null) {
-                vo.setRoleCode(labor.getRoleCode());
-                vo.setPositionId(labor.getPositionId());
-                vo.setHours(labor.getHours());
-                vo.setCostRate(new BigDecimal(labor.getCostRate()));
-                if (labor.getPositionId() != null) {
-                    var pos = sysPositionDao.selectById(labor.getPositionId());
-                    vo.setPositionName(pos != null ? pos.getName() : null);
-                }
-            }
-        } else if ("PROCUREMENT".equals(item.getCategory())) {
-            WhPmBudgetItemProcurement procurement = procurementMap.get(item.getId());
-            if (procurement != null) {
-                vo.setBomItem(procurement.getBomItem());
-                vo.setQty(new BigDecimal(procurement.getQty()));
-                vo.setUnitPrice(new BigDecimal(procurement.getUnitPrice()));
-            }
-        }
-
-        return vo;
-    }
-
-    private Map<String, WhPmBudgetItemLabor> loadLaborDetails(List<WhPmBudgetItem> items) {
-        Map<String, WhPmBudgetItemLabor> map = new HashMap<>();
-        for (WhPmBudgetItem item : items) {
-            List<WhPmBudgetItemLabor> labors = budgetItemLaborDao.selectByBudgetItemId(item.getId());
-            if (!labors.isEmpty()) {
-                map.put(item.getId(), labors.get(0));
-            }
-        }
-        return map;
-    }
-
-    private Map<String, WhPmBudgetItemProcurement> loadProcurementDetails(List<WhPmBudgetItem> items) {
-        Map<String, WhPmBudgetItemProcurement> map = new HashMap<>();
-        for (WhPmBudgetItem item : items) {
-            List<WhPmBudgetItemProcurement> procurements = budgetItemProcurementDao.selectByBudgetItemId(item.getId());
-            if (!procurements.isEmpty()) {
-                map.put(item.getId(), procurements.get(0));
-            }
-        }
-        return map;
-    }
-
-    private Map<String, WhPmBudgetItemOther> loadOtherDetails(List<WhPmBudgetItem> items) {
-        Map<String, WhPmBudgetItemOther> map = new HashMap<>();
-        for (WhPmBudgetItem item : items) {
-            List<WhPmBudgetItemOther> others = budgetItemOtherDao.selectByBudgetItemId(item.getId());
-            if (!others.isEmpty()) {
-                map.put(item.getId(), others.get(0));
-            }
-        }
-        return map;
-    }
-
-    private BigDecimal sumActualForItems(List<BudgetItemVO> items) {
-        BigDecimal total = BigDecimal.ZERO;
-        for (BudgetItemVO item : items) {
-            if (item.getChildren() != null && !item.getChildren().isEmpty()) {
-                total = total.add(sumActualForItems(item.getChildren()));
-            } else {
-                total = total.add(item.getActualAmount());
-            }
-        }
-        return total;
-    }
-
-    private boolean isOtherCategory(String category) {
-        return "TRAVEL".equals(category) || "BUSINESS".equals(category)
-                || "ENTERTAINMENT".equals(category) || "ACTIVITY".equals(category)
-                || "OTHER".equals(category);
     }
 
     private String toUpgradeDraftVersion(String currentVersion) {
@@ -777,30 +550,24 @@ public class WhPmBudgetBo {
     }
 
     private void fillUserNames(List<WhPmBudget> budgets) {
-        Map<String, String> userNameMap = new HashMap<>();
         Set<String> projectIds = new HashSet<>();
+        Set<String> userIds = new HashSet<>();
         for (WhPmBudget b : budgets) {
-            collectUserId(b.getCreateBy(), userNameMap);
+            if (b.getCreateBy() != null) userIds.add(b.getCreateBy());
             if (b.getProjectId() != null && !b.getProjectId().isEmpty()) {
                 projectIds.add(b.getProjectId());
             }
         }
-        // Load charters for project names and PM names
-        Map<String, com.wh.entity.pm.WhPmCharter> charterMap = new HashMap<>();
-        for (String pid : projectIds) {
-            var charter = charterDao.selectById(pid);
-            if (charter != null) charterMap.put(pid, charter);
-        }
-        // Load PM user names
-        Set<String> pmIds = new HashSet<>();
+        // Batch-load charters for project names and PM names
+        Map<String, com.wh.entity.pm.WhPmCharter> charterMap = projectIds.isEmpty()
+                ? new HashMap<>()
+                : charterDao.selectBatchIds(projectIds).stream()
+                        .collect(Collectors.toMap(com.wh.entity.pm.WhPmCharter::getId, c -> c));
+        // Batch-load user names (creators + PMs)
         for (var c : charterMap.values()) {
-            if (c.getPmId() != null) pmIds.add(c.getPmId());
+            if (c.getPmId() != null) userIds.add(c.getPmId());
         }
-        Map<String, String> pmNameMap = new HashMap<>();
-        for (String pmId : pmIds) {
-            var user = sysUserDao.selectById(pmId);
-            if (user != null) pmNameMap.put(pmId, user.getRealName());
-        }
+        Map<String, String> userNameMap = sysUserBo.getRealNameMap(userIds);
         for (WhPmBudget b : budgets) {
             b.setCreateByName(userNameMap.get(b.getCreateBy()));
             var charter = charterMap.get(b.getProjectId());
@@ -808,17 +575,24 @@ public class WhPmBudgetBo {
                 b.setProjectName(charter.getProjectName());
                 b.setProjectShortName(charter.getProjectShortName());
                 if (charter.getPmId() != null) {
-                    b.setPmName(pmNameMap.get(charter.getPmId()));
+                    b.setPmName(userNameMap.get(charter.getPmId()));
                 }
             }
         }
     }
 
     private void fillActualCosts(List<WhPmBudget> budgets) {
+        Set<String> projectIds = budgets.stream()
+                .map(WhPmBudget::getProjectId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        fillActualCosts(budgets, sumActualCostsByProject(projectIds));
+    }
+
+    private void fillActualCosts(List<WhPmBudget> budgets, Map<String, Double> actualCostMap) {
         for (WhPmBudget b : budgets) {
             if (b.getProjectId() == null) continue;
-            Double cost = actualCostDao.sumAmountByProjectId(b.getProjectId());
-            double actualCost = cost != null ? cost : 0.0;
+            double actualCost = actualCostMap.getOrDefault(b.getProjectId(), 0.0);
             b.setActualCost(actualCost);
             double costBaseline = parseDouble(b.getCostBaseline());
             b.setBudgetRemaining(costBaseline - actualCost);
@@ -828,6 +602,24 @@ public class WhPmBudgetBo {
                 b.setCostRatio(0.0);
             }
         }
+    }
+
+    /**
+     * 批量汇总各项目实际成本（单次 GROUP BY 查询），缺失项目视为 0。
+     */
+    private Map<String, Double> sumActualCostsByProject(Collection<String> projectIds) {
+        if (projectIds == null || projectIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, Double> result = new HashMap<>();
+        for (Map<String, Object> row : actualCostDao.sumAmountByProjectIds(projectIds)) {
+            Object pid = row.get("projectId");
+            Object total = row.get("total");
+            if (pid != null && total != null) {
+                result.put(pid.toString(), ((Number) total).doubleValue());
+            }
+        }
+        return result;
     }
 
     private double parseDouble(String val) {
@@ -840,14 +632,5 @@ public class WhPmBudgetBo {
 
     private String formatDecimal(BigDecimal val) {
         return val != null ? val.stripTrailingZeros().toPlainString() : "0";
-    }
-
-    private void collectUserId(String userId, Map<String, String> map) {
-        if (userId != null && !userId.isEmpty() && !map.containsKey(userId)) {
-            var user = sysUserDao.selectById(userId);
-            if (user != null) {
-                map.put(userId, user.getRealName());
-            }
-        }
     }
 }

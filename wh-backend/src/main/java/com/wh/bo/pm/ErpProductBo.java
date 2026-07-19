@@ -29,9 +29,10 @@ public class ErpProductBo {
         LambdaQueryWrapper<ErpProduct> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ErpProduct::getDelFlag, "0");
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(ErpProduct::getProductCode, keyword)
-                   .or()
-                   .like(ErpProduct::getProductName, keyword);
+            // 必须用 and(...) 嵌套，否则 OR 会绕过 del_flag 等前置条件
+            wrapper.and(w -> w.like(ErpProduct::getProductCode, keyword)
+                    .or()
+                    .like(ErpProduct::getProductName, keyword));
         }
         wrapper.orderByDesc(ErpProduct::getCreateDate);
         IPage<ErpProduct> result = productDao.selectPage(page, wrapper);

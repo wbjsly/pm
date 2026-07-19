@@ -15,11 +15,27 @@ public interface WhPmActualCostDao extends BaseMapper<WhPmActualCost> {
     @Select("SELECT COALESCE(SUM(CAST(AMOUNT AS REAL)), 0) FROM pm_actual_cost WHERE BUDGET_ITEM_ID = #{budgetItemId} AND DEL_FLAG = '0'")
     Double sumAmountByBudgetItemId(@Param("budgetItemId") String budgetItemId);
 
+    @Select("<script>" +
+            "SELECT BUDGET_ITEM_ID AS budgetItemId, COALESCE(SUM(CAST(AMOUNT AS REAL)), 0) AS total " +
+            "FROM pm_actual_cost WHERE DEL_FLAG = '0' AND BUDGET_ITEM_ID IN " +
+            "<foreach collection='budgetItemIds' item='bid' open='(' separator=',' close=')'>#{bid}</foreach>" +
+            " GROUP BY BUDGET_ITEM_ID" +
+            "</script>")
+    List<Map<String, Object>> sumAmountByBudgetItemIds(@Param("budgetItemIds") java.util.Collection<String> budgetItemIds);
+
     @Select("SELECT * FROM pm_actual_cost WHERE PROJECT_ID = #{projectId} AND DEL_FLAG = '0' ORDER BY COST_DATE DESC")
     List<WhPmActualCost> selectByProjectId(@Param("projectId") String projectId);
 
     @Select("SELECT COALESCE(SUM(CAST(AMOUNT AS REAL)), 0) FROM pm_actual_cost WHERE PROJECT_ID = #{projectId} AND DEL_FLAG = '0'")
     Double sumAmountByProjectId(@Param("projectId") String projectId);
+
+    @Select("<script>" +
+            "SELECT PROJECT_ID AS projectId, COALESCE(SUM(CAST(AMOUNT AS REAL)), 0) AS total " +
+            "FROM pm_actual_cost WHERE DEL_FLAG = '0' AND PROJECT_ID IN " +
+            "<foreach collection='projectIds' item='pid' open='(' separator=',' close=')'>#{pid}</foreach>" +
+            " GROUP BY PROJECT_ID" +
+            "</script>")
+    List<Map<String, Object>> sumAmountByProjectIds(@Param("projectIds") java.util.Collection<String> projectIds);
 
     @Select("SELECT SUBSTR(COST_DATE, 1, 7) AS yearMonth, " +
             "COALESCE(SUM(CASE WHEN COST_TYPE = 'LABOR' THEN CAST(AMOUNT AS REAL) ELSE 0 END), 0) AS laborAmount, " +
