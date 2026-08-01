@@ -20,8 +20,8 @@ public class DefaultCostEventPublisher implements CostEventPublisher {
         WhPmActualCost cost = new WhPmActualCost();
         cost.setProjectId(event.getProjectId());
         cost.setBudgetItemId(event.getBudgetItemId());
-        cost.setCostDate(event.getCostDate() != null ? event.getCostDate().toString() : null);
-        cost.setCostType(null); // Will be derived from budget item
+        cost.setCostDate(event.getCostDate() != null ? event.getCostDate().toString() : java.time.LocalDate.now().toString());
+        cost.setCostType(""); // Will be derived from budget item
         cost.setAmount(event.getAmount() != null ? event.getAmount().toPlainString() : "0");
         cost.setDescription(event.getSourceRef());
         cost.setSourceSystem(event.getSourceSystem() != null ? event.getSourceSystem().name().toLowerCase() : "manual");

@@ -302,6 +302,60 @@ class WhPmActualCostBoTest {
             assertNotNull(sum);
             assertEquals(0.0, sum, 0.001);
         }
+
+        @Test
+        @DisplayName("pageList - 空字符串过滤参数")
+        void testPageList_EmptyStringFilters() {
+            actualCostBo.create(createCostRequest(laborItemId, "LABOR", "80000"));
+            IPage<WhPmActualCost> page = actualCostBo.pageList(
+                    1, 10, "", "", "", "", "");
+            assertNotNull(page);
+            assertTrue(page.getTotal() >= 1);
+        }
+
+        @Test
+        @DisplayName("getSumByFilter - 空筛选参数返回全量求和")
+        void testGetSumByFilter_NoFilters() {
+            actualCostBo.create(createCostRequest(laborItemId, "LABOR", "80000"));
+            Double sum = actualCostBo.getSumByFilter(projectId, null, null);
+            assertNotNull(sum);
+            assertEquals(80000.0, sum, 0.001);
+        }
+
+        @Test
+        @DisplayName("pageList - 按预算科目筛选")
+        void testPageList_ByBudgetItem() {
+            actualCostBo.create(createCostRequest(laborItemId, "LABOR", "80000"));
+            actualCostBo.create(createCostRequest(travelItemId, "TRAVEL", "15000"));
+
+            IPage<WhPmActualCost> page = actualCostBo.pageList(1, 10, null, laborItemId, null, null, null);
+            assertEquals(1, page.getTotal());
+            assertEquals(laborItemId, page.getRecords().get(0).getBudgetItemId());
+        }
+
+        @Test
+        @DisplayName("pageList - 按来源系统筛选")
+        void testPageList_BySourceSystem() {
+            actualCostBo.create(createCostRequest(laborItemId, "LABOR", "80000"));
+
+            IPage<WhPmActualCost> page = actualCostBo.pageList(1, 10, projectId, null, "manual", null, null);
+            assertEquals(1, page.getTotal());
+        }
+
+        @Test
+        @DisplayName("pageList - 多成本类型与多月筛选")
+        void testPageList_MultipleTypesAndMonths() {
+            ActualCostCreateRequest req1 = createCostRequest(laborItemId, "LABOR", "80000");
+            req1.setCostDate("2026-01-15");
+            actualCostBo.create(req1);
+            ActualCostCreateRequest req2 = createCostRequest(travelItemId, "TRAVEL", "15000");
+            req2.setCostDate("2026-02-10");
+            actualCostBo.create(req2);
+
+            IPage<WhPmActualCost> page = actualCostBo.pageList(
+                    1, 10, projectId, null, null, "LABOR,TRAVEL", "2026-01,2026-02");
+            assertEquals(2, page.getTotal());
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -342,6 +396,29 @@ class WhPmActualCostBoTest {
             ServiceException ex = assertThrows(ServiceException.class,
                     () -> actualCostBo.delete(created.getId()));
             assertTrue(ex.getMessage().contains("只能删除手动录入"));
+        }
+    }
+
+    @Nested
+    @DisplayName("补充 - 空字符串筛选")
+    class ExtraStringTests {
+
+        @Test
+        @DisplayName("getSumByFilter - 空字符串筛选参数返回全量求和")
+        void testGetSumByFilter_EmptyStrings() {
+            actualCostBo.create(createCostRequest(laborItemId, "LABOR", "80000"));
+            Double sum = actualCostBo.getSumByFilter(projectId, "", "");
+            assertNotNull(sum);
+            assertEquals(80000.0, sum, 0.001);
+        }
+
+        @Test
+        @DisplayName("create - budgetItemId 为空字符串时不校验")
+        void testCreate_EmptyBudgetItemId() {
+            ActualCostCreateRequest req = createCostRequest(null, "LABOR", "80000");
+            req.setBudgetItemId("");
+            WhPmActualCost cost = actualCostBo.create(req);
+            assertNotNull(cost.getId());
         }
     }
 }

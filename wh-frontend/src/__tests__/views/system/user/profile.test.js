@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setupPinia, elementStubs } from '../../../helpers'
+import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual('vue-router')
@@ -17,7 +19,10 @@ vi.mock('@/utils/request', () => ({
 }))
 
 describe('UserProfilePage', () => {
-  beforeEach(() => setupPinia())
+  beforeEach(() => {
+    setupPinia()
+    vi.clearAllMocks()
+  })
 
   function createWrapper() {
     return import('@/views/system/user/profile.vue').then(m => mount(m.default, { global: { stubs: elementStubs } }))
@@ -26,5 +31,40 @@ describe('UserProfilePage', () => {
   it('渲染个人资料页面', async () => {
     const wrapper = await createWrapper()
     expect(wrapper.exists()).toBe(true)
+  })
+
+  it('无 userId 时不请求详情', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(request.get).not.toHaveBeenCalled()
+  })
+
+  it('有 userId 时加载用户详情', async () => {
+    const pinia = await import('pinia')
+    const { useUserStore } = await import('@/store/user')
+    const store = useUserStore()
+    store.userInfo = { userId: 'u1' }
+    request.get.mockResolvedValue({ code: 200, data: { username: 'admin', roles: ['ROLE_ADMIN'] } })
+
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(request.get).toHaveBeenCalledWith('/system/users/u1')
+    expect(wrapper.vm.userData.username).toBe('admin')
+  })
+
+  it('加载失败提示错误', async () => {
+    const pinia = await import('pinia')
+    const { useUserStore } = await import('@/store/user')
+    const store = useUserStore()
+    store.userInfo = { userId: 'u1' }
+    const spy = vi.spyOn(ElMessage, 'error').mockImplementation(() => {})
+    request.get.mockRejectedValue(new Error('fail'))
+
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(spy).toHaveBeenCalled()
   })
 })

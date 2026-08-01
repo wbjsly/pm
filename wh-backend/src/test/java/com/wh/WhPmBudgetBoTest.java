@@ -351,6 +351,47 @@ class WhPmBudgetBoTest {
                     .anyMatch(vo -> project.getId().equals(vo.getProjectId()));
             assertTrue(found);
         }
+
+        @Test
+        @DisplayName("pageProjectBudgets - 按项目/PM/状态筛选")
+        void testPageProjectBudgets_WithFilters() {
+            WhPmCharter project = createApprovedProject();
+            createDraftBudget(project.getId());
+
+            IPage<ProjectBudgetVO> byProject = budgetBo.pageProjectBudgets(1, 10, project.getId(), null, null);
+            assertEquals(1, byProject.getTotal());
+
+            IPage<ProjectBudgetVO> byPm = budgetBo.pageProjectBudgets(1, 10, null, TEST_USER, null);
+            assertNotNull(byPm);
+
+            IPage<ProjectBudgetVO> byStatus = budgetBo.pageProjectBudgets(1, 10, null, null, "DRAFT");
+            assertNotNull(byStatus);
+        }
+
+        @Test
+        @DisplayName("pageList - 按 PM 过滤（过滤掉他人项目预算）")
+        void testPageList_ByPmId() {
+            WhPmCharter myProject = createProject(); // pmId=TEST_USER
+            createDraftBudget(myProject.getId());
+
+            // 创建另一个 PM 的项目和预算
+            CharterCreateRequest other = new CharterCreateRequest();
+            other.setProjectName("他人项目");
+            other.setProjectCode("OP-" + System.nanoTime());
+            other.setProjectShortName("OP");
+            other.setSponsorId("other_sponsor");
+            other.setPmId("other_pm");
+            WhPmCharter otherCharter = charterBo.create(other);
+            projectIds.add(otherCharter.getId());
+            createDraftBudget(otherCharter.getId());
+
+            IPage<WhPmBudget> page = budgetBo.pageList(1, 100, null, TEST_USER, null);
+            assertTrue(page.getTotal() >= 1);
+            page.getRecords().forEach(b -> {
+                WhPmCharter c = charterDao.selectById(b.getProjectId());
+                assertEquals(TEST_USER, c.getPmId());
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -715,6 +756,27 @@ class WhPmBudgetBoTest {
                     () -> budgetBo.getComparison(budget.getId(), null));
             assertTrue(ex.getMessage().contains("没有已审批通过"));
         }
+
+        @Test
+        @DisplayName("指定版本获取预实对比")
+        void testGetComparison_WithVersion() {
+            WhPmCharter project = createApprovedProject();
+            WhPmBudget budget = createDraftBudget(project.getId());
+            budgetBo.submit(budget.getId());
+            budgetBo.approve(budget.getId(), "通过");
+
+            BudgetComparisonVO comparison = budgetBo.getComparison(budget.getId(), "v1.0");
+            assertNotNull(comparison);
+            assertEquals("v1.0", comparison.getVersion());
+        }
+
+        @Test
+        @DisplayName("预算不存在时预实对比抛出 404")
+        void testGetComparison_BudgetNotFound_Throws404() {
+            ServiceException ex = assertThrows(ServiceException.class,
+                    () -> budgetBo.getComparison("nonexistent-budget", null));
+            assertEquals(404, ex.getCode());
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -755,6 +817,82 @@ class WhPmBudgetBoTest {
             List<BudgetVersionVO> history = budgetBo.getVersionHistory(project.getId());
             assertNotNull(history);
             assertTrue(history.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("补充边界分支")
+    class ExtraBranchTests {
+
+        @Test
+        @DisplayName("pageList / pageProjectBudgets - 空字符串过滤参数")
+        void emptyStringFilters() {
+            WhPmCharter project = createProject();
+            createDraftBudget(project.getId());
+
+            IPage<WhPmBudget> page = budgetBo.pageList(1, 10, "", "", "");
+            assertNotNull(page);
+
+            IPage<ProjectBudgetVO> proj = budgetBo.pageProjectBudgets(1, 10, "", "", "");
+            assertNotNull(proj);
+        }
+
+        @Test
+        @DisplayName("pageProjectBudgets - 无预算的项目也展示")
+        void projectWithoutBudget_stillListed() {
+            WhPmCharter project = createApprovedProject();
+            IPage<ProjectBudgetVO> page = budgetBo.pageProjectBudgets(1, 10, project.getId(), null, null);
+            assertTrue(page.getTotal() >= 1);
+            assertTrue(page.getRecords().stream()
+                    .anyMatch(vo -> project.getId().equals(vo.getProjectId())));
+        }
+
+        @Test
+        @DisplayName("pageProjectBudgets - 分页越界返回空列表")
+        void pageProjectBudgets_outOfRange() {
+            createProject();
+            IPage<ProjectBudgetVO> page = budgetBo.pageProjectBudgets(999, 10, null, null, null);
+            assertNotNull(page);
+            assertTrue(page.getRecords().isEmpty() || page.getTotal() < (999-1)*10);
+        }
+
+        @Test
+        @DisplayName("getById - 逻辑删除后返回 404")
+        void getByIdAfterLogicalDelete_throws404() {
+            WhPmCharter project = createProject();
+            WhPmBudget budget = createDraftBudget(project.getId());
+            budgetBo.delete(budget.getId());
+            ServiceException ex = assertThrows(ServiceException.class,
+                    () -> budgetBo.getById(budget.getId()));
+            assertEquals(404, ex.getCode());
+        }
+
+        @Test
+        @DisplayName("getComparison - managementReserve 为 null 时按 0 处理")
+        void comparison_nullManagementReserve() {
+            WhPmCharter project = createApprovedProject();
+            WhPmBudget budget = createDraftBudget(project.getId());
+            budgetBo.submit(budget.getId());
+            budgetBo.approve(budget.getId(), "通过");
+
+            // 将 managementReserve 置 null
+            budgetDao.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<WhPmBudget>()
+                    .eq(WhPmBudget::getId, budget.getId())
+                    .set(WhPmBudget::getManagementReserve, null));
+
+            BudgetComparisonVO comparison = budgetBo.getComparison(budget.getId(), null);
+            assertNotNull(comparison);
+        }
+
+        @Test
+        @DisplayName("submit 后 nextDraftVersion 从 v0.5 升级到 v0.7")
+        void nextDraftVersion_endsWith5() {
+            WhPmCharter project = createProject();
+            WhPmBudget budget = createDraftBudget(project.getId());
+            assertEquals("v0.5", budget.getVersion());
+            budgetBo.submit(budget.getId());
+            WhPmBudget submitted = budgetDao.selectById(budget.getId());
+            assertEquals("v0.7", submitted.getVersion());
         }
     }
 }

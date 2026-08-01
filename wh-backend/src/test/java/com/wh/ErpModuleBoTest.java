@@ -280,4 +280,52 @@ class ErpModuleBoTest {
             assertEquals(404, ex.getCode());
         }
     }
+
+    @Nested
+    @DisplayName("补充 - 创建分支")
+    class ExtraCreateTests {
+
+        @Test
+        @DisplayName("create - 状态为空时默认为 ACTIVE")
+        void createWithoutStatus_defaultsToActive() {
+            ErpModule module = new ErpModule();
+            module.setProductId("product-extra");
+            module.setModuleName("默认状态模块");
+            module.setModuleCode("DEF-" + System.nanoTime());
+            // 不设置 status
+
+            ErpModule saved = moduleBo.create(module);
+
+            assertEquals("ACTIVE", saved.getStatus());
+            assertEquals("0", saved.getDelFlag());
+        }
+    }
+
+    @Nested
+    @DisplayName("补充 - 空字符串与默认状态")
+    class ExtraBranchTests {
+
+        @Test
+        @DisplayName("pageList - 空字符串过滤参数视为无条件")
+        void pageList_emptyStrings() {
+            createModule("模块A", "MOD-A");
+            IPage<com.wh.entity.pm.ErpModule> page = moduleBo.pageList(1, 10, "", "");
+            assertNotNull(page);
+            assertTrue(page.getTotal() >= 1);
+        }
+
+        @Test
+        @DisplayName("create - 状态为空字符串时默认为 ACTIVE")
+        void createEmptyStatus_defaultsToActive() {
+            ErpModule module = new ErpModule();
+            module.setProductId("product-empty-status");
+            module.setModuleName("空状态模块");
+            module.setModuleCode("EMP-" + System.nanoTime());
+            module.setStatus("");
+
+            ErpModule saved = moduleBo.create(module);
+
+            assertEquals("ACTIVE", saved.getStatus());
+        }
+    }
 }

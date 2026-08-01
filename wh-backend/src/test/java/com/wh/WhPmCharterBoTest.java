@@ -7,6 +7,7 @@ import com.wh.common.ServiceException;
 import com.wh.dao.pm.WhPmCharterDao;
 import com.wh.entity.pm.WhPmCharter;
 import com.wh.fixtures.TestFixtures;
+import com.wh.dao.pm.WhPmWbsElementDao;
 import com.wh.vo.pm.CharterStatsVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class WhPmCharterBoTest {
 
     @Autowired
     private TestFixtures fixtures;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private WhPmWbsElementDao wbsElementDao;
 
     // static 列表：JUnit 5 PER_METHOD 生命周期下各测试方法共享同一列表
     private static final List<String> createdCharterIds = new ArrayList<>();
@@ -718,5 +722,120 @@ class WhPmCharterBoTest {
         WhPmCharter approved = charterBo.getById(charter.getId());
         assertEquals("APPROVED", approved.getStatus());
         assertEquals("最终审批通过", approved.getApprovalComment());
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  补充：WBS 工作量非数字容错 / 空字符串过滤 / 统计边界
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("pageList - WBS effortEstimate 非数字时容错统计")
+    void testPageList_NonNumericEffort() {
+        WhPmCharter charter = createDraftCharter("非数字工作量");
+
+        com.wh.entity.pm.WhPmWbsElement e = new com.wh.entity.pm.WhPmWbsElement();
+        e.setProjectId(charter.getId());
+        e.setWbsCode("WBS-BAD-" + System.nanoTime());
+        e.setLevel(1);
+        e.setName("非法工作量");
+        e.setElementType("TASK");
+        e.setEffortEstimate("abc");
+        e.setStatus("NOT_STARTED");
+        e.setDelFlag("0");
+        e.setVerNo(0);
+        wbsElementDao.insert(e);
+
+        var page = charterBo.pageList(1, 10, null, null, null, null);
+        assertNotNull(page);
+        com.wh.entity.pm.WhPmCharter found = page.getRecords().stream()
+                .filter(c -> charter.getId().equals(c.getId())).findFirst().orElse(null);
+        assertNotNull(found);
+    }
+
+    @Test
+    @DisplayName("pageList - 空字符串过滤参数视为无条件")
+    void testPageList_EmptyStrings() {
+        WhPmCharter charter = createDraftCharter("空字符串过滤");
+        var page = charterBo.pageList(1, 10, "", "", "", "");
+        assertNotNull(page);
+        assertTrue(page.getTotal() >= 1);
+    }
+
+    @Test
+    @DisplayName("pageList - WBS 节点 effort 为空且 actualEndDate 有值时统计")
+    void testPageList_WbsNullEffortWithActualEnd() {
+        WhPmCharter charter = createDraftCharter("WBS统计边界");
+
+        com.wh.entity.pm.WhPmWbsElement e = new com.wh.entity.pm.WhPmWbsElement();
+        e.setProjectId(charter.getId());
+        e.setWbsCode("WBS-END-" + System.nanoTime());
+        e.setLevel(1);
+        e.setName("有实际完成日期");
+        e.setElementType("TASK");
+        e.setEffortEstimate(null);
+        e.setLatestPlannedEndDate(null);
+        e.setActualEndDate("2026-06-30");
+        e.setStatus("COMPLETED");
+        e.setDelFlag("0");
+        e.setVerNo(0);
+        wbsElementDao.insert(e);
+
+        var page = charterBo.pageList(1, 10, null, null, null, null);
+        com.wh.entity.pm.WhPmCharter found = page.getRecords().stream()
+                .filter(c -> charter.getId().equals(c.getId())).findFirst().orElse(null);
+        assertNotNull(found);
+        assertEquals("2026-06-30", found.getWbsLatestEndDate());
+        assertNull(found.getWbsTotalEffort());
+    }
+
+    @Test
+    @DisplayName("getStatsByPmId - 包含 REJECTED 状态统计")
+    void testStats_WithRejected() {
+        WhPmCharter charter = createTestCharter("驳回统计");
+        charterBo.submit(charter.getId());
+        charterBo.reject(charter.getId(), "驳回");
+
+        var stats = charterBo.getStatsByPmId(TEST_PM);
+        assertTrue(stats.getRejected() >= 1);
+    }
+
+    @Test
+    @DisplayName("pageList - 多个 WBS 取最新结束日期")
+    void testPageList_MultipleWbs_LatestEndDate() {
+        WhPmCharter charter = createDraftCharter("多WBS日期");
+        String projectId = charter.getId();
+
+        com.wh.entity.pm.WhPmWbsElement e1 = new com.wh.entity.pm.WhPmWbsElement();
+        e1.setProjectId(projectId);
+        e1.setWbsCode("WBS-L1-" + System.nanoTime());
+        e1.setLevel(1);
+        e1.setName("较早");
+        e1.setElementType("TASK");
+        e1.setEffortEstimate("10");
+        e1.setLatestPlannedEndDate("2026-03-01");
+        e1.setStatus("NOT_STARTED");
+        e1.setDelFlag("0");
+        e1.setVerNo(0);
+        wbsElementDao.insert(e1);
+
+        com.wh.entity.pm.WhPmWbsElement e2 = new com.wh.entity.pm.WhPmWbsElement();
+        e2.setProjectId(projectId);
+        e2.setWbsCode("WBS-L2-" + System.nanoTime());
+        e2.setLevel(1);
+        e2.setName("较晚");
+        e2.setElementType("TASK");
+        e2.setEffortEstimate("20");
+        e2.setLatestPlannedEndDate("2026-09-15");
+        e2.setStatus("NOT_STARTED");
+        e2.setDelFlag("0");
+        e2.setVerNo(0);
+        wbsElementDao.insert(e2);
+
+        var page = charterBo.pageList(1, 10, null, null, null, null);
+        com.wh.entity.pm.WhPmCharter found = page.getRecords().stream()
+                .filter(c -> charter.getId().equals(c.getId())).findFirst().orElse(null);
+        assertNotNull(found);
+        assertEquals("2026-09-15", found.getWbsLatestEndDate());
+        assertEquals(30.0, found.getWbsTotalEffort().doubleValue(), 0.001);
     }
 }

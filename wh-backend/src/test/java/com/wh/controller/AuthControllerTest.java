@@ -1,6 +1,9 @@
 package com.wh.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wh.dao.system.SysUserDao;
+import com.wh.entity.system.SysUser;
+import com.wh.fixtures.AuthHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,15 @@ class AuthControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private AuthHelper authHelper;
+
+    @Autowired
+    private SysUserDao sysUserDao;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private static final String LOGIN_URL = "/api/auth/login";
     private static final String LOGOUT_URL = "/api/auth/logout";
@@ -146,6 +158,54 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.data.username").value("admin"))
                     .andExpect(jsonPath("$.data.userId").exists())
                     .andExpect(jsonPath("$.data.roles").isArray());
+        }
+    }
+
+    @Nested
+    @DisplayName("补充 - 登录与信息边界")
+    class ExtraAuthTests {
+
+        @Test
+        @DisplayName("禁用用户登录 - 返回 403")
+        void loginDisabledUser_returns403() throws Exception {
+            SysUser u = new SysUser();
+            u.setUsername("disabled_" + System.nanoTime());
+            u.setPassword("$2a$10$KvoqroXik9qiqRA8MLTZTe4XrU1QurZ3dLZVEg9CJNfImhr1AGD3W"); // Admin@123
+            u.setStatus("0");
+            u.setDelFlag("0");
+            u.setVerNo(0);
+            sysUserDao.insert(u);
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    java.util.Map.of("username", u.getUsername(), "password", "Admin@123"))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(403));
+            jdbcCleanup(u.getId());
+        }
+
+        @Test
+        @DisplayName("非 Bearer 前缀的 Authorization - 返回 401")
+        void getInfoWithNonBearer_returns401() throws Exception {
+            mockMvc.perform(get("/api/auth/info")
+                            .header("Authorization", "Basic abc123"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(401));
+        }
+
+        @Test
+        @DisplayName("有效 token 但用户不存在 - 返回 404")
+        void getInfoWithUnknownUser_returns404() throws Exception {
+            String token = authHelper.generateToken("nonexistent_user_xyz", java.util.List.of("ROLE_USER"));
+            mockMvc.perform(get("/api/auth/info")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(404));
+        }
+
+        private void jdbcCleanup(String id) {
+            jdbcTemplate.update("DELETE FROM sys_user WHERE ID = ?", id);
         }
     }
 }

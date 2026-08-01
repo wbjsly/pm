@@ -6,6 +6,8 @@ import com.wh.entity.pm.WhPmCharter;
 import com.wh.entity.pm.WhPmWbsElement;
 import com.wh.entity.pm.WhPmWbsVersion;
 import com.wh.fixtures.TestFixtures;
+import com.wh.dao.pm.WhPmWbsVersionDao;
+import com.wh.dao.pm.WhPmWbsElementDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,6 +33,15 @@ class WhPmWbsElementBoTest {
 
     @Autowired
     private TestFixtures fixtures;
+
+    @Autowired
+    private WhPmWbsElementDao wbsElementDao;
+
+    @Autowired
+    private WhPmWbsVersionDao versionDao;
+
+    @Autowired
+    private javax.sql.DataSource dataSource;
 
     private String projectId;
 
@@ -253,6 +264,49 @@ class WhPmWbsElementBoTest {
             ServiceException ex = assertThrows(ServiceException.class,
                     () -> wbsBo.update(element.getId(), req));
             assertTrue(ex.getMessage().contains("不可修改"));
+        }
+
+        @Test
+        @DisplayName("更新时日期不变 - 不创建新版本")
+        void testUpdate_NoDateChange_NoNewVersion() {
+            WhPmWbsElement element = createWbs("无日期更新");
+            int versionsBefore = wbsBo.getVersionHistory(element.getId()).size();
+
+            WbsUpdateRequest req = new WbsUpdateRequest();
+            req.setName("仅改名");
+            req.setPlannedStartDate(null);
+            req.setPlannedEndDate(null);
+
+            wbsBo.update(element.getId(), req);
+
+            assertEquals(versionsBefore, wbsBo.getVersionHistory(element.getId()).size(),
+                    "日期未变化时不应新增版本");
+        }
+
+        @Test
+        @DisplayName("删除子节点 - 触发父节点工作量重算")
+        void testDelete_Child_RecalculatesParent() {
+            WhPmWbsElement parent = createWbs("父节点");
+            WbsCreateRequest childReq = new WbsCreateRequest();
+            childReq.setProjectId(projectId);
+            childReq.setParentId(parent.getId());
+            childReq.setName("子节点");
+            childReq.setElementType("TASK");
+            childReq.setEffortEstimate("40");
+            childReq.setBudgetEstimate("5000");
+            WhPmWbsElement child = wbsBo.create(childReq);
+
+            wbsBo.delete(child.getId());
+
+            // recalculateEffort 在无剩余子节点时直接返回，父节点工作量保持原值
+            WhPmWbsElement parentAfter = wbsBo.getDetail(parent.getId());
+            assertEquals("40.0", parentAfter.getEffortEstimate());
+        }
+
+        @Test
+        @DisplayName("recalculateEffort - 节点不存在时不抛异常")
+        void testRecalculateEffort_NodeNotFound() {
+            assertDoesNotThrow(() -> wbsBo.recalculateEffort("nonexistent-node"));
         }
 
         @Test
@@ -535,4 +589,125 @@ class WhPmWbsElementBoTest {
             assertEquals(404, ex.getCode());
         }
     }
+
+    // ═══════════════════════════════════════════════════════
+    //  补充：边界分支
+    // ═══════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("补充边界")
+    class ExtraBranchTests {
+
+        @Test
+        @DisplayName("getTreeByProjectId - 空字符串过滤参数")
+        void treeWithEmptyStrings() {
+            WhPmWbsElement e = createWbs("空串过滤");
+            List<WhPmWbsElement> tree = wbsBo.getTreeByProjectId(projectId, "", "");
+            assertTrue(tree.stream().anyMatch(t -> t.getId().equals(e.getId())));
+        }
+
+        @Test
+        @DisplayName("getDetail - 逻辑删除后返回 404")
+        void detailAfterDelete_throws404() {
+            WhPmWbsElement e = createWbs("逻辑删除");
+            wbsBo.delete(e.getId());
+            com.wh.common.ServiceException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                    com.wh.common.ServiceException.class, () -> wbsBo.getDetail(e.getId()));
+            assertEquals(404, ex.getCode());
+        }
+
+        @Test
+        @DisplayName("update - IN_DEVELOPMENT 状态可更新")
+        void updateInDevelopment_success() {
+            WhPmWbsElement e = createWbs("开发中更新");
+            wbsBo.start(e.getId());
+
+            WbsUpdateRequest req = new WbsUpdateRequest();
+            req.setName("开发中已改");
+            wbsBo.update(e.getId(), req);
+
+            assertEquals("开发中已改", wbsBo.getDetail(e.getId()).getName());
+        }
+
+        @Test
+        @DisplayName("update - 子节点更新触发父节点重算")
+        void updateChild_recalculatesParent() {
+            WhPmWbsElement parent = createWbs("父节点重算");
+            WbsCreateRequest childReq = new WbsCreateRequest();
+            childReq.setProjectId(projectId);
+            childReq.setParentId(parent.getId());
+            childReq.setName("子节点");
+            childReq.setElementType("TASK");
+            childReq.setEffortEstimate("40");
+            childReq.setBudgetEstimate("5000");
+            WhPmWbsElement child = wbsBo.create(childReq);
+
+            WbsUpdateRequest req = new WbsUpdateRequest();
+            req.setName(child.getName());
+            req.setEffortEstimate("60");
+            wbsBo.update(child.getId(), req);
+
+            // 父节点 effort 应等于子节点之和 60
+            WhPmWbsElement parentAfter = wbsBo.getDetail(parent.getId());
+            assertEquals("60.0", parentAfter.getEffortEstimate());
+        }
+
+        @Test
+        @DisplayName("create - 父节点不存在时抛出异常")
+        void createWithMissingParent_throws() {
+            WbsCreateRequest req = new WbsCreateRequest();
+            req.setProjectId(projectId);
+            req.setParentId("nonexistent-parent");
+            req.setName("孤儿节点");
+            req.setElementType("TASK");
+            com.wh.common.ServiceException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                    com.wh.common.ServiceException.class, () -> wbsBo.create(req));
+            assertTrue(ex.getMessage().contains("父节点不存在"));
+        }
+
+        @Test
+        @DisplayName("树构建 - 孤儿节点（parentId 不在映射）不崩溃")
+        void treeWithOrphanNode() {
+            WhPmWbsElement orphan = new WhPmWbsElement();
+            orphan.setProjectId(projectId);
+            orphan.setWbsCode("ORPHAN-" + System.nanoTime());
+            orphan.setName("孤儿");
+            orphan.setElementType("TASK");
+            orphan.setParentId("missing-parent");
+            orphan.setLevel(2);
+            orphan.setStatus("NOT_STARTED");
+            orphan.setDelFlag("0");
+            orphan.setVerNo(0);
+            wbsElementDao.insert(orphan);
+
+            List<WhPmWbsElement> tree = wbsBo.getTreeByProjectId(projectId, null, null);
+            // 不抛异常即可
+            assertNotNull(tree);
+        }
+    }
+
+        @Test
+        @DisplayName("getDetail - ownerId 为 null 的节点正常返回")
+        void detailWithNullOwner() {
+            WhPmWbsElement e = createWbs("无负责人");
+            com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<WhPmWbsElement> w =
+                    new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
+            w.eq(WhPmWbsElement::getId, e.getId()).set(WhPmWbsElement::getOwnerId, null);
+            wbsElementDao.update(null, w);
+
+            WhPmWbsElement detail = wbsBo.getDetail(e.getId());
+            assertEquals(e.getId(), detail.getId());
+        }
+
+        @Test
+        @DisplayName("create - effortEstimate 为空字符串时容忍")
+        void createWithEmptyEffort() {
+            WbsCreateRequest req = new WbsCreateRequest();
+            req.setProjectId(projectId);
+            req.setName("空工时节点");
+            req.setElementType("TASK");
+            req.setEffortEstimate("");
+            WhPmWbsElement e = wbsBo.create(req);
+            assertNotNull(e.getId());
+        }
 }

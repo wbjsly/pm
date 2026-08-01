@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setupPinia, elementStubs } from '../../../helpers'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 vi.mock('@/utils/request', () => ({
   default: {
@@ -76,7 +77,6 @@ describe('CharterPage', () => {
     const wrapper = await createWrapper()
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
-
     expect(request.get).toHaveBeenCalledWith('/pm/charters', expect.any(Object))
   })
 
@@ -85,7 +85,6 @@ describe('CharterPage', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
     vi.clearAllMocks()
-
     request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
 
     const buttons = wrapper.findAll('button')
@@ -95,7 +94,6 @@ describe('CharterPage', () => {
     await resetBtn.trigger('click')
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
-
     expect(request.get).toHaveBeenCalledWith('/pm/charters', expect.objectContaining({
       params: expect.objectContaining({ status: '', keyword: '', pageNum: 1 }),
     }))
@@ -106,7 +104,6 @@ describe('CharterPage', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
     vi.clearAllMocks()
-
     request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
 
     const buttons = wrapper.findAll('button')
@@ -116,7 +113,6 @@ describe('CharterPage', () => {
     await queryBtn.trigger('click')
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
-
     expect(request.get).toHaveBeenCalled()
   })
 
@@ -131,9 +127,7 @@ describe('CharterPage', () => {
     const wrapper = await createWrapper()
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
-
     expect(request.get).toHaveBeenCalled()
-    // 验证表格区域存在
     const table = wrapper.find('.el-card')
     expect(table.exists()).toBe(true)
   })
@@ -142,8 +136,149 @@ describe('CharterPage', () => {
     const wrapper = await createWrapper()
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
-
     const html = wrapper.html()
     expect(html).toContain('total="3"')
+  })
+
+  it('API 失败时组件不崩溃', async () => {
+    request.get.mockRejectedValue(new Error('Network error'))
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.exists()).toBe(true)
+  })
+
+  it('分页属性设置', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.queryParams.pageNum).toBe(1)
+    expect(wrapper.vm.queryParams.pageSize).toBe(10)
+  })
+
+  it('状态筛选参数正确传递', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.clearAllMocks()
+    request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
+
+    wrapper.vm.queryParams.status = 'APPROVED'
+    wrapper.vm.loadData()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    expect(request.get).toHaveBeenCalledWith('/pm/charters', expect.objectContaining({
+      params: expect.objectContaining({ status: 'APPROVED' }),
+    }))
+  })
+})
+
+describe('CharterPage 交互', () => {
+  beforeEach(() => {
+    setupPinia()
+    vi.clearAllMocks()
+    request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
+    request.post.mockResolvedValue({ code: 200 })
+    request.delete.mockResolvedValue({ code: 200 })
+  })
+
+  function createWrapper() {
+    return import('@/views/pm/charter/index.vue').then(m => mount(m.default, { global: { stubs: elementStubs } }))
+  }
+
+  it('categoryTagType / categoryLabel 辅助函数', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.categoryTagType('CONTRACT')).toBe('primary')
+    expect(wrapper.vm.categoryTagType('R_D')).toBe('warning')
+    expect(wrapper.vm.categoryTagType('X')).toBe('info')
+    expect(wrapper.vm.categoryLabel('CONTRACT')).toBe('合同项目')
+  })
+
+  it('handleDelete 确认后调用删除 API', async () => {
+    vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue('confirm')
+    vi.spyOn(ElMessage, 'success').mockImplementation(() => {})
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.handleDelete('c1')
+    expect(request.delete).toHaveBeenCalledWith('/pm/charters/c1')
+  })
+
+  it('handleSubmit 确认后调用提交 API', async () => {
+    vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue('confirm')
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.handleSubmit('c1')
+    expect(request.post).toHaveBeenCalledWith('/pm/charters/c1/submit')
+  })
+
+  it('handleApprove / handleReject 打开审批弹窗', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    wrapper.vm.handleApprove('c1')
+    expect(wrapper.vm.approvalDialog.visible).toBe(true)
+    expect(wrapper.vm.approvalDialog.mode).toBe('approve')
+    wrapper.vm.handleReject('c1')
+    expect(wrapper.vm.approvalDialog.mode).toBe('reject')
+  })
+
+  it('分页切换调用 loadData', async () => {
+    const wrapper = await createWrapper()
+    await wrapper.vm.$nextTick()
+    vi.clearAllMocks()
+    request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
+    wrapper.vm.queryParams.pageNum = 2
+    wrapper.vm.loadData()
+    await wrapper.vm.$nextTick()
+    expect(request.get).toHaveBeenCalledWith('/pm/charters', expect.objectContaining({
+      params: expect.objectContaining({ pageNum: 2 }),
+    }))
+  })
+})
+
+describe('CharterPage 审批弹窗', () => {
+  beforeEach(() => {
+    setupPinia()
+    vi.clearAllMocks()
+    request.get.mockResolvedValue({ code: 200, data: { records: mockCharters, total: 3 } })
+    request.post.mockResolvedValue({ code: 200 })
+  })
+
+  function createWrapper() {
+    return import('@/views/pm/charter/index.vue').then(m => mount(m.default, { global: { stubs: elementStubs } }))
+  }
+
+  it('confirmApproval approve 通过审批', async () => {
+    vi.spyOn(ElMessage, 'success').mockImplementation(() => {})
+    const wrapper = await createWrapper()
+    wrapper.vm.handleApprove('c1')
+    wrapper.vm.approvalDialog.comment = '同意'
+    wrapper.vm.loadData = vi.fn()
+    await wrapper.vm.confirmApproval()
+    expect(request.post).toHaveBeenCalledWith('/pm/charters/c1/approve', expect.any(Object))
+    expect(wrapper.vm.approvalDialog.visible).toBe(false)
+  })
+
+  it('confirmApproval reject 成功驳回', async () => {
+    vi.spyOn(ElMessage, 'success').mockImplementation(() => {})
+    const wrapper = await createWrapper()
+    wrapper.vm.approvalDialog.charterId = 'c1'
+    wrapper.vm.approvalDialog.mode = 'reject'
+    wrapper.vm.approvalDialog.comment = '理由'
+    wrapper.vm.approvalDialog.visible = true
+    wrapper.vm.loadData = vi.fn()
+    await wrapper.vm.confirmApproval()
+    expect(request.post).toHaveBeenCalledWith('/pm/charters/c1/reject', { rejectReason: '理由' })
+  })
+
+  it('confirmApproval reject 无原因提示', async () => {
+    vi.spyOn(ElMessage, 'warning').mockImplementation(() => {})
+    const wrapper = await createWrapper()
+    wrapper.vm.approvalDialog.charterId = 'c1'
+    wrapper.vm.approvalDialog.mode = 'reject'
+    wrapper.vm.approvalDialog.comment = ''
+    wrapper.vm.approvalDialog.visible = true
+    await wrapper.vm.confirmApproval()
+    expect(ElMessage.warning).toHaveBeenCalled()
   })
 })

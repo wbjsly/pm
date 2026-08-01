@@ -93,4 +93,55 @@ class WhPmActualCostControllerTest {
                         .content(body))
                 .andExpect(status().isOk());
     }
+
+    // ═══════════════════════════════════════════════════════
+    //  补充：detail / delete
+    // ═══════════════════════════════════════════════════════
+
+    private String createActualCost() throws Exception {
+        String body = objectMapper.writeValueAsString(Map.of(
+                "projectId", projectId,
+                "amount", "5000.00",
+                "costType", "人力成本",
+                "costDate", "2026-01-15",
+                "description", "补充成本"));
+        String resp = mockMvc.perform(post("/api/pm/actual-costs")
+                        .header("Authorization", "Bearer " + pmToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(resp).get("data").get("id").asText();
+    }
+
+    @Test
+    @DisplayName("GET /api/pm/actual-costs/{id} - 查询单条成本")
+    void detail_existingId_returnsDetail() throws Exception {
+        String id = createActualCost();
+        mockMvc.perform(get("/api/pm/actual-costs/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.id").value(id));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/pm/actual-costs/{id} - 删除手动成本")
+    void delete_success() throws Exception {
+        String id = createActualCost();
+        mockMvc.perform(delete("/api/pm/actual-costs/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+    }
+
+    @Test
+    @DisplayName("GET /api/pm/actual-costs/{id} - 不存在的 ID 返回 404")
+    void detail_nonexistentId_returns404() throws Exception {
+        mockMvc.perform(get("/api/pm/actual-costs/{id}", "nonexistent-id")
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(404));
+    }
 }

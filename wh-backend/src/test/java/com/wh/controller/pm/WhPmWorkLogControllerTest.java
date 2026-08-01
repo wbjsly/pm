@@ -27,6 +27,7 @@ class WhPmWorkLogControllerTest {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AuthHelper authHelper;
     @Autowired private TestFixtures fixtures;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private String pmToken;
     private String projectId;
@@ -149,5 +150,104 @@ class WhPmWorkLogControllerTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(404));
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  补充：get / approve / reject / resubmit / delete
+    // ═══════════════════════════════════════════════════════
+
+    private String createWorkLog(String date, String hours) throws Exception {
+        // 清理该日期残留数据，避免重复运行累积导致 24 小时上限
+        jdbcTemplate.update("DELETE FROM pm_work_log WHERE LOG_DATE = ?", date);
+        String body = objectMapper.writeValueAsString(Map.of(
+                "projectId", projectId, "logDate", date,
+                "hoursWorked", hours, "workDescription", "补充测试"));
+        String resp = mockMvc.perform(post("/api/pm/work-hours")
+                        .header("Authorization", "Bearer " + pmToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(resp).get("data").get("id").asText();
+    }
+
+    @Test
+    @DisplayName("GET /api/pm/work-hours/{id} - 查询单条工时")
+    void get_existingId_returnsDetail() throws Exception {
+        String id = createWorkLog("2026-01-05", "8");
+        mockMvc.perform(get("/api/pm/work-hours/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.id").value(id));
+    }
+
+    @Test
+    @DisplayName("POST /api/pm/work-hours/{id}/approve - PM 审批通过")
+    void approve_success() throws Exception {
+        String id = createWorkLog("2026-01-06", "8");
+        String body = objectMapper.writeValueAsString(Map.of("reason", "同意"));
+        mockMvc.perform(post("/api/pm/work-hours/{id}/approve", id)
+                        .header("Authorization", "Bearer " + pmToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+        mockMvc.perform(get("/api/pm/work-hours/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+    }
+
+    @Test
+    @DisplayName("POST /api/pm/work-hours/{id}/reject - PM 驳回")
+    void reject_success() throws Exception {
+        String id = createWorkLog("2026-01-07", "8");
+        String body = objectMapper.writeValueAsString(Map.of("reason", "工时不符"));
+        mockMvc.perform(post("/api/pm/work-hours/{id}/reject", id)
+                        .header("Authorization", "Bearer " + pmToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+        mockMvc.perform(get("/api/pm/work-hours/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(jsonPath("$.data.status").value("REJECTED"));
+    }
+
+    @Test
+    @DisplayName("POST /api/pm/work-hours/{id}/resubmit - 驳回后重新提交")
+    void resubmit_success() throws Exception {
+        String id = createWorkLog("2026-01-08", "8");
+        mockMvc.perform(post("/api/pm/work-hours/{id}/reject", id)
+                        .header("Authorization", "Bearer " + pmToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"修改\"}"));
+        mockMvc.perform(post("/api/pm/work-hours/{id}/resubmit", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+        mockMvc.perform(get("/api/pm/work-hours/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(jsonPath("$.data.status").value("DRAFT"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/pm/work-hours/{id} - 删除草稿工时")
+    void delete_success() throws Exception {
+        String id = createWorkLog("2026-01-09", "8");
+        mockMvc.perform(delete("/api/pm/work-hours/{id}", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+    }
+
+    @Test
+    @DisplayName("POST /api/pm/work-hours/{id}/approve - 无请求体调用")
+    void approve_withoutBody() throws Exception {
+        String id = createWorkLog("2026-02-05", "8");
+        mockMvc.perform(post("/api/pm/work-hours/{id}/approve", id)
+                        .header("Authorization", "Bearer " + pmToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
     }
 }

@@ -153,8 +153,8 @@ public class WhPmWbsTransferBo {
         }
 
         // Pass 2: Create child nodes with 3-level parent resolution
+        // Note: total is already counted in Pass 1 for all rows, no recount needed here
         for (CsvRow row : childRows) {
-            result.setTotal(result.getTotal() + 1); // recount
             if (row.name.isEmpty()) {
                 WbsImportResult.ImportDetail d = new WbsImportResult.ImportDetail();
                 d.setRow(row.rowNum);
@@ -258,7 +258,8 @@ public class WhPmWbsTransferBo {
     public void exportWbs(String projectId, javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
         List<WhPmWbsElement> tree = wbsElementBo.buildDisplayTree(projectId);
 
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=wbs_export.xlsx");
 
         // Simple CSV fallback (no POI dependency)
@@ -290,7 +291,8 @@ public class WhPmWbsTransferBo {
     }
 
     public void downloadTemplate(javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
-        response.setContentType("text/csv");
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=wbs_import_template.csv");
         java.io.PrintWriter writer = response.getWriter();
         writer.println("序号,名称,父节点名称,产品类型,产品编码,模块编码,优先级,技术难度,计划责任人,估算工时(小时),估算成本(元),描述");

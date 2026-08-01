@@ -134,3 +134,62 @@ describe('useTabStore', () => {
     expect(store.activeTab).toBe('')
   })
 })
+
+describe('useTabStore 边界', () => {
+  beforeEach(() => setupPinia())
+
+  it('addTab 无 meta 时 title 回退到 name', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'NoMeta', path: '/no-meta', meta: {} })
+    const tab = store.tabs.find(t => t.path === '/no-meta')
+    expect(tab.title).toBe('NoMeta')
+    expect(tab.closable).toBe(true)
+  })
+
+  it('addTab closable 为 false 时保持不可关闭', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'Fixed', path: '/fixed', meta: { title: '固定', closable: false } })
+    const tab = store.tabs.find(t => t.path === '/fixed')
+    expect(tab.closable).toBe(false)
+  })
+
+  it('removeTab 不存在的路径无副作用', () => {
+    const store = useTabStore()
+    const before = store.tabs.length
+    store.removeTab('/not-exist')
+    expect(store.tabs.length).toBe(before)
+  })
+
+  it('removeTab 移除最后一个激活标签时激活前一个', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'A', path: '/a', meta: { title: 'A' } })
+    store.addTab({ name: 'B', path: '/b', meta: { title: 'B' } })
+    store.activeTab = '/b'
+    store.removeTab('/b')
+    expect(store.activeTab).toBe('/a')
+  })
+
+  it('closeLeft 路径不存在时无副作用', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'A', path: '/a', meta: { title: 'A' } })
+    const before = store.tabs.length
+    store.closeLeft('/not-exist')
+    expect(store.tabs.length).toBe(before)
+  })
+
+  it('closeRight 路径不存在时无副作用', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'A', path: '/a', meta: { title: 'A' } })
+    const before = store.tabs.length
+    store.closeRight('/not-exist')
+    expect(store.tabs.length).toBe(before)
+  })
+
+  it('closeOther 路径不存在时无副作用', () => {
+    const store = useTabStore()
+    store.addTab({ name: 'A', path: '/a', meta: { title: 'A' } })
+    const before = store.tabs.length
+    store.closeOther('/not-exist')
+    expect(store.tabs.length).toBe(before)
+  })
+})

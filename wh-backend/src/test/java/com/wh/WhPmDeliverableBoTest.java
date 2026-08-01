@@ -6,6 +6,7 @@ import com.wh.bo.pm.WhPmDeliverableBo;
 import com.wh.common.ServiceException;
 import com.wh.dao.pm.WhPmCharterDao;
 import com.wh.dao.pm.WhPmDeliverableDao;
+import com.wh.entity.pm.WhPmCharter;
 import com.wh.entity.pm.WhPmDeliverable;
 import com.wh.fixtures.TestFixtures;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +25,21 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 @SpringBootTest
 @ActiveProfiles({"sqlite", "dev"})
 @DisplayName("WhPmDeliverableBo 集成测试")
@@ -42,6 +58,9 @@ class WhPmDeliverableBoTest {
 
     @Autowired
     private TestFixtures fixtures;
+
+    @MockBean
+    private MinioClient minioClient;
 
     private final List<String> createdCharterIds = new ArrayList<>();
     private final List<String> createdDeliverableIds = new ArrayList<>();
@@ -599,5 +618,376 @@ class WhPmDeliverableBoTest {
         ServiceException ex = assertThrows(ServiceException.class,
                 () -> deliverableBo.markDelivered(d.getId()));
         assertTrue(ex.getMessage().contains("项目经理"));
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  uploadAttachment 上传附件
+    // ═══════════════════════════════════════════════════════
+
+    private MockMultipartFile file(String name) {
+        return new MockMultipartFile("file", name, "text/plain", "hello".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - PM 在草稿状态上传成功")
+    void testUploadAttachment_Success() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("附件上传");
+
+        List<Map<String, Object>> attachments = deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        assertEquals(1, attachments.size());
+        assertEquals("a.txt", attachments.get(0).get("fileName"));
+        WhPmDeliverable updated = deliverableBo.getById(d.getId());
+        assertTrue(updated.getAttachments().contains("a.txt"));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - 超过 10 个上限抛异常")
+    void testUploadAttachment_OverLimit_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("附件超限");
+        for (int i = 0; i < 10; i++) {
+            deliverableBo.uploadAttachment(d.getId(), file("file" + i + ".txt"));
+        }
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.uploadAttachment(d.getId(), file("overflow.txt")));
+        assertTrue(ex.getMessage().contains("上限"));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - PENDING_APPROVAL 状态不可上传")
+    void testUploadAttachment_Pending_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("审批中不可上传");
+        deliverableBo.submit(d.getId());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.uploadAttachment(d.getId(), file("a.txt")));
+        assertTrue(ex.getMessage().contains("草稿") || ex.getMessage().contains("驳回"));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - 非项目经理上传失败")
+    void testUploadAttachment_NotPm_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("他人不可上传");
+
+        setCurrentUser(OTHER_USER);
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.uploadAttachment(d.getId(), file("a.txt")));
+        assertTrue(ex.getMessage().contains("项目经理"));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - MinIO 上传失败抛异常")
+    void testUploadAttachment_MinioFailure_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class)))
+                .thenThrow(new RuntimeException("minio down"));
+        WhPmDeliverable d = createDraftDeliverable("上传失败");
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.uploadAttachment(d.getId(), file("a.txt")));
+        assertTrue(ex.getMessage().contains("上传失败"));
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  deleteAttachment 删除附件
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("deleteAttachment - 删除后返回剩余附件")
+    void testDeleteAttachment_Success() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("删除附件");
+        deliverableBo.uploadAttachment(d.getId(), file("b.txt"));
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        // 附件按文件名排序后索引: a.txt=0, b.txt=1
+        List<Map<String, Object>> remaining = deliverableBo.deleteAttachment(d.getId(), 0);
+
+        assertEquals(1, remaining.size());
+        assertEquals("b.txt", remaining.get(0).get("fileName"));
+        // 再次删除索引 0 应删除 b.txt，列表为空
+        List<Map<String, Object>> empty = deliverableBo.deleteAttachment(d.getId(), 0);
+        assertTrue(empty.isEmpty());
+    }
+
+    @Test
+    @DisplayName("deleteAttachment - 索引无效抛异常")
+    void testDeleteAttachment_InvalidIndex_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("无效索引");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.deleteAttachment(d.getId(), 5));
+        assertTrue(ex.getMessage().contains("索引"));
+    }
+
+    @Test
+    @DisplayName("deleteAttachment - 非草稿状态不可删除")
+    void testDeleteAttachment_NotDraft_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("审批中不可删附件");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+        deliverableBo.submit(d.getId());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.deleteAttachment(d.getId(), 0));
+        assertTrue(ex.getMessage().contains("草稿") || ex.getMessage().contains("驳回"));
+    }
+
+    @Test
+    @DisplayName("deleteAttachment - 非项目经理删除失败")
+    void testDeleteAttachment_NotPm_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("他人不可删附件");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        setCurrentUser(OTHER_USER);
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.deleteAttachment(d.getId(), 0));
+        assertTrue(ex.getMessage().contains("项目经理"));
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  getAttachmentBytes / getAttachmentFilename
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("getAttachmentBytes - 成功读取 MinIO 内容")
+    void testGetAttachmentBytes_Success() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        GetObjectResponse response = new GetObjectResponse(
+                null, null, null, "obj",
+                new ByteArrayInputStream("file-content".getBytes(StandardCharsets.UTF_8)));
+        when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(response);
+
+        WhPmDeliverable d = createDraftDeliverable("读取附件");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        byte[] bytes = deliverableBo.getAttachmentBytes(d.getId(), 0);
+        assertEquals("file-content", new String(bytes, StandardCharsets.UTF_8));
+        assertEquals("a.txt", deliverableBo.getAttachmentFilename(d.getId(), 0));
+    }
+
+    @Test
+    @DisplayName("getAttachmentBytes - 索引无效抛异常")
+    void testGetAttachmentBytes_InvalidIndex_Throws() {
+        WhPmDeliverable d = createDraftDeliverable("无附件索引");
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.getAttachmentBytes(d.getId(), 0));
+        assertTrue(ex.getMessage().contains("索引"));
+    }
+
+    @Test
+    @DisplayName("getAttachmentBytes - MinIO 读取失败抛异常")
+    void testGetAttachmentBytes_MinioFailure_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        when(minioClient.getObject(any(GetObjectArgs.class)))
+                .thenThrow(new RuntimeException("minio down"));
+
+        WhPmDeliverable d = createDraftDeliverable("读取失败");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.getAttachmentBytes(d.getId(), 0));
+        assertTrue(ex.getMessage().contains("下载"));
+    }
+
+    @Test
+    @DisplayName("getAttachmentFilename - 索引无效抛异常")
+    void testGetAttachmentFilename_InvalidIndex_Throws() {
+        WhPmDeliverable d = createDraftDeliverable("文件名索引");
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.getAttachmentFilename(d.getId(), 0));
+        assertTrue(ex.getMessage().contains("索引"));
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  getAttachmentDownloadZip / getZipDownloadFilename
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("getAttachmentDownloadZip - 有附件时打包成功")
+    void testGetAttachmentDownloadZip_Success() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        GetObjectResponse response = new GetObjectResponse(
+                null, null, null, "obj",
+                new ByteArrayInputStream("zip-content".getBytes(StandardCharsets.UTF_8)));
+        when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(response);
+
+        WhPmDeliverable d = createDraftDeliverable("打包下载");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        byte[] zip = deliverableBo.getAttachmentDownloadZip(d.getId());
+        assertTrue(zip.length > 0);
+        // ZIP 魔数 PK
+        assertEquals('P', zip[0]);
+        assertEquals('K', zip[1]);
+    }
+
+    @Test
+    @DisplayName("getAttachmentDownloadZip - 无附件抛异常")
+    void testGetAttachmentDownloadZip_Empty_Throws() {
+        WhPmDeliverable d = createDraftDeliverable("无附件打包");
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.getAttachmentDownloadZip(d.getId()));
+        assertTrue(ex.getMessage().contains("没有可下载"));
+    }
+
+    @Test
+    @DisplayName("getAttachmentDownloadZip - MinIO 读取失败抛异常")
+    void testGetAttachmentDownloadZip_MinioFailure_Throws() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        when(minioClient.getObject(any(GetObjectArgs.class)))
+                .thenThrow(new RuntimeException("minio down"));
+
+        WhPmDeliverable d = createDraftDeliverable("打包失败");
+        deliverableBo.uploadAttachment(d.getId(), file("a.txt"));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> deliverableBo.getAttachmentDownloadZip(d.getId()));
+        assertTrue(ex.getMessage().contains("读取文件失败"));
+    }
+
+    @Test
+    @DisplayName("getZipDownloadFilename - 项目有短名时使用短名")
+    void testGetZipDownloadFilename_WithShortName() {
+        WhPmDeliverable d = createDraftDeliverable("短名项目");
+
+        String filename = deliverableBo.getZipDownloadFilename(d.getId());
+
+        assertTrue(filename.startsWith("T-短名项目-"), "应包含项目短名: " + filename);
+        assertTrue(filename.endsWith(".zip"));
+    }
+
+    @Test
+    @DisplayName("getZipDownloadFilename - 项目不存在时使用 unknown")
+    void testGetZipDownloadFilename_NoProject() {
+        WhPmDeliverable d = createDraftDeliverable("无项目成果物");
+        LambdaUpdateWrapper<WhPmDeliverable> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(WhPmDeliverable::getId, d.getId()).set(WhPmDeliverable::getProjectId, "nonexistent-project");
+        deliverableDao.update(null, wrapper);
+
+        String filename = deliverableBo.getZipDownloadFilename(d.getId());
+
+        assertTrue(filename.startsWith("unknown-无项目成果物-"), "应使用 unknown: " + filename);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  填充逻辑与附件过滤
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("getById - 项目存在且发起人为真实用户时填充 sponsorName")
+    void testGetById_FillsSponsorName() {
+        LambdaUpdateWrapper<WhPmCharter> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(WhPmCharter::getId, approvedProjectId)
+                .set(WhPmCharter::getSponsorId, "user00000000000000000000000000002");
+        charterDao.update(null, wrapper);
+
+        WhPmDeliverable d = createDraftDeliverable("发起人姓名");
+
+        WhPmDeliverable found = deliverableBo.getById(d.getId());
+        assertEquals("张伟", found.getSponsorName());
+    }
+
+    @Test
+    @DisplayName("pageList - 已删除附件从 attachments JSON 中过滤")
+    void testPageList_FiltersDeletedAttachments() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("附件过滤");
+        deliverableBo.uploadAttachment(d.getId(), file("keep.txt"));
+        deliverableBo.uploadAttachment(d.getId(), file("drop.txt"));
+        deliverableBo.deleteAttachment(d.getId(), 0); // 删除排序后的 index 0 = drop.txt
+
+        var page = deliverableBo.pageList(1, 10, null, approvedProjectId, null);
+        WhPmDeliverable result = page.getRecords().stream()
+                .filter(r -> r.getId().equals(d.getId())).findFirst().orElse(null);
+        assertNotNull(result);
+        assertTrue(result.getAttachments().contains("keep.txt"));
+        assertFalse(result.getAttachments().contains("drop.txt"));
+    }
+
+    @Test
+    @DisplayName("filterActiveAttachments - null 或空 JSON 返回空列表")
+    void testFilterActiveAttachments_NullOrEmpty() {
+        assertTrue(deliverableBo.filterActiveAttachments(null).isEmpty());
+        assertTrue(deliverableBo.filterActiveAttachments("").isEmpty());
+        assertTrue(deliverableBo.filterActiveAttachments("not-json").isEmpty());
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  补充：空字符串过滤 / 项目缺失 / contentType null / 未登录
+    // ═══════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("pageList - 空字符串过滤参数")
+    void testPageList_EmptyStrings() {
+        createDraftDeliverable("空串过滤");
+        var page = deliverableBo.pageList(1, 10, "", "", "");
+        assertTrue(page.getTotal() >= 1);
+    }
+
+    @Test
+    @DisplayName("create - 项目不存在时抛异常")
+    void testCreate_ProjectMissing_Throws() {
+        DeliverableCreateRequest req = new DeliverableCreateRequest();
+        req.setName("无项目成果物");
+        req.setProjectId("nonexistent-project");
+        req.setPlannedDeliveryDate("2026-12-31");
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> deliverableBo.create(req));
+        assertTrue(ex.getMessage().contains("项目不存在"));
+    }
+
+    @Test
+    @DisplayName("create - 未登录时抛 401")
+    void testCreate_NotLoggedIn_Throws401() {
+        SecurityContextHolder.clearContext();
+        DeliverableCreateRequest req = new DeliverableCreateRequest();
+        req.setName("未登录成果物");
+        req.setProjectId(approvedProjectId);
+        req.setPlannedDeliveryDate("2026-12-31");
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> deliverableBo.create(req));
+        assertEquals(401, ex.getCode());
+        // 恢复登录态，避免影响后续测试
+        setCurrentUser(TestFixtures.PM_USER);
+    }
+
+    @Test
+    @DisplayName("submit - 关联项目被删除时抛异常")
+    void testSubmit_ProjectMissing_Throws() {
+        WhPmDeliverable d = createDraftDeliverable("项目缺失提交");
+        // 将成果物关联到不存在的项目
+        com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<WhPmDeliverable> w =
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
+        w.eq(WhPmDeliverable::getId, d.getId()).set(WhPmDeliverable::getProjectId, "missing-project");
+        deliverableDao.update(null, w);
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> deliverableBo.submit(d.getId()));
+        assertTrue(ex.getMessage().contains("关联项目不存在"));
+    }
+
+    @Test
+    @DisplayName("uploadAttachment - 文件 content-type 为空时默认 octet-stream")
+    void testUploadAttachment_NullContentType() throws Exception {
+        when(minioClient.putObject(any(PutObjectArgs.class))).thenReturn(null);
+        WhPmDeliverable d = createDraftDeliverable("无类型附件");
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "binary.dat", null, new byte[]{1, 2, 3});
+
+        List<Map<String, Object>> attachments = deliverableBo.uploadAttachment(d.getId(), file);
+        assertEquals(1, attachments.size());
+        assertEquals("binary.dat", attachments.get(0).get("fileName"));
     }
 }

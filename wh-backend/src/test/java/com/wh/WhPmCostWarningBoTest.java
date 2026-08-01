@@ -270,7 +270,61 @@ class WhPmCostWarningBoTest {
         }
     }
 
+        @Test
+        @DisplayName("预算总额为 0 时比率为 0 不创建预警")
+        void testTriggerCalculation_ZeroBudget_NoWarning() {
+            String budgetId = createApprovedBudget("0");
+            insertActualCost(budgetId, "100");
+
+            costWarningBo.triggerCalculation();
+
+            assertTrue(costWarningBo.listByProjectId(projectId, "ACTIVE").isEmpty());
+        }
+
+        @Test
+        @DisplayName("比率回落后关闭已有活跃预警")
+        void testTriggerCalculation_ClosesWarningWhenRatioDrops() {
+            String budgetId = createApprovedBudget("1000");
+            insertActualCost(budgetId, "850"); // ratio 0.85 → INFO
+            costWarningBo.triggerCalculation();
+            assertEquals(1, costWarningBo.listByProjectId(projectId, "ACTIVE").size());
+
+            // 删除全部成本，ratio 归零 → 关闭已有预警
+            List<WhPmCostWarning> active = costWarningBo.listByProjectId(projectId, "ACTIVE");
+            for (WhPmActualCost c : actualCostDao.selectList(null)) {
+                if (budgetId.equals(c.getBudgetItemId())) {
+                    actualCostDao.deleteById(c.getId());
+                }
+            }
+            costWarningBo.triggerCalculation();
+
+            List<WhPmCostWarning> closed = costWarningBo.listByProjectId(projectId, "CLOSED");
+            assertEquals(1, closed.size());
+            assertTrue(costWarningBo.listByProjectId(projectId, "ACTIVE").isEmpty());
+        }
+
+        @Test
+        @DisplayName("同级预警重复触发时更新比率而非重复创建")
+        void testTriggerCalculation_SameLevelUpdatesRatio() {
+            String budgetId = createApprovedBudget("1000");
+            insertActualCost(budgetId, "850"); // ratio 0.85 → INFO
+            costWarningBo.triggerCalculation();
+            costWarningBo.triggerCalculation();
+
+            List<WhPmCostWarning> active = costWarningBo.listByProjectId(projectId, "ACTIVE");
+            assertEquals(1, active.size());
+            assertEquals("INFO", active.get(0).getLevel());
+            assertEquals("0.8500", active.get(0).getRatio());
+        }
+
     // ══════════════════════════════════════════════════
+        @Test
+        @DisplayName("listByProjectId - 空字符串参数视为无条件")
+        void testListByProjectId_EmptyStrings() {
+            List<WhPmCostWarning> result = costWarningBo.listByProjectId("", "");
+            assertNotNull(result);
+        }
+
     //  Helper
     // ══════════════════════════════════════════════════
 
